@@ -1,0 +1,62 @@
+[
+  {
+    "id": "c-001",
+    "language": "c",
+    "title": "Print Loop",
+    "code": "for (int i = 1; i <= 10; i++) {\n  printf(\"%d \", i);\n}\nprintf(\"\\n\");"
+  },
+  {
+    "id": "c-002",
+    "language": "c",
+    "title": "Sum Array",
+    "code": "int sum = 0;\nfor (int i = 0; i < n; i++) {\n  sum += a[i];\n}\nprintf(\"%d\\n\", sum);"
+  },
+  {
+    "id": "c-003",
+    "language": "c",
+    "title": "Find Max",
+    "code": "int mx = a[0];\nfor (int i = 1; i < n; i++) {\n  if (a[i] > mx) mx = a[i];\n}\nprintf(\"%d\\n\", mx);"
+  },
+  {
+    "id": "c-004",
+    "language": "c",
+    "title": "Count Vowels",
+    "code": "int count = 0;\nfor (int i = 0; s[i] != '\\0'; i++) {\n  char c = tolower((unsigned char)s[i]);\n  if (c=='a'||c=='e'||c=='i'||c=='o'||c=='u') count++;\n}\nprintf(\"%d\\n\", count);"
+  },
+  {
+    "id": "c-005",
+    "language": "c",
+    "title": "Reverse String",
+    "code": "int i = 0, j = (int)strlen(s) - 1;\nwhile (i < j) {\n  char t = s[i];\n  s[i] = s[j];\n  s[j] = t;\n  i++; j--;\n}\nprintf(\"%s\\n\", s);"
+  },
+  {
+    "id": "c-006",
+    "language": "c",
+    "title": "Factorial Loop",
+    "code": "long long f = 1;\nfor (int i = 2; i <= n; i++) {\n  f *= i;\n}\nprintf(\"%lld\\n\", f);"
+  },
+  {
+    "id": "c-007",
+    "language": "c",
+    "title": "Even or Odd",
+    "code": "if (x % 2 == 0) {\n  printf(\"even\\n\");\n} else {\n  printf(\"odd\\n\");\n}"
+  },
+  {
+    "id": "c-008",
+    "language": "c",
+    "title": "Swap Two Numbers",
+    "code": "int t = a;\na = b;\nb = t;\nprintf(\"%d %d\\n\", a, b);"
+  },
+  {
+    "id": "c-009",
+    "language": "c",
+    "title": "Struct Basics",
+    "code": "struct Player {\n  int id;\n  int score;\n};\nstruct Player p = {1, 42};\nprintf(\"%d:%d\\n\", p.id, p.score);"
+  },
+  {
+    "id": "c-010",
+    "language": "c",
+    "title": "Pointer Increment",
+    "code": "int *p = a;\nfor (int i = 0; i < n; i++) {\n  *p = *p + 1;\n  p++;\n}\nprintf(\"%d\\n\", a[0]);"
+  }
+]

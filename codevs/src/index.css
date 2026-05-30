@@ -2,10 +2,48 @@
 
 :root {
   color-scheme: dark;
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+
+  /* Core palette */
+  --color-bg: #020617; /* deep navy */
+  --color-bg-soft: #040b1a;
+  --color-surface: #081222;
+  --color-surface-elevated: #0b1930;
+
+  --color-primary: #39ff14; /* neon green */
+  --color-primary-soft: rgba(57, 255, 20, 0.16);
+  --color-secondary: #00e5ff; /* cyan */
+  --color-secondary-soft: rgba(0, 229, 255, 0.14);
+
+  --color-danger: #ff3864;
+  --color-warning: #ffcc00;
+  --color-success: #39ff14;
+
+  --color-text: #eafff2;
+  --color-text-muted: rgba(234, 255, 242, 0.68);
+  --color-border: rgba(57, 255, 20, 0.18);
+
+  /* Typography */
+  --font-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  background: #020617;
+  --font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Shape */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+
+  /* Effects */
+  --shadow-glow: 0 0 24px rgba(57, 255, 20, 0.18);
+  --shadow-glow-cyan: 0 0 24px rgba(0, 229, 255, 0.16);
+  --shadow-elevated: 0 18px 60px rgba(0, 0, 0, 0.45);
+
+  /* Motion */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 450ms ease;
+
+  background: var(--color-bg);
 }
 
 body {
@@ -17,4 +55,302 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+@layer base {
+  html {
+    /* Global UI scale: increases rem-based sizing across the entire site */
+    font-size: clamp(16px, 0.5vw + 14px, 18px);
+  }
+
+  html,
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    text-rendering: geometricPrecision;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: var(--color-secondary-soft);
+    color: var(--color-text);
+  }
+
+  a:hover {
+    color: var(--color-secondary);
+  }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-secondary), white 8%);
+    outline-offset: 2px;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-code);
+  }
+
+  /* Scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 229, 255, 0.35) rgba(2, 6, 23, 0.6);
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: rgba(2, 6, 23, 0.6);
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(0, 229, 255, 0.28);
+    border-radius: 999px;
+    border: 2px solid rgba(2, 6, 23, 0.8);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 229, 255, 0.38);
+  }
+}
+
+@layer components {
+  .app-shell {
+    background: radial-gradient(
+        1000px 500px at 50% 0%,
+        rgba(0, 229, 255, 0.12),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 500px at 10% 20%,
+        rgba(57, 255, 20, 0.12),
+        transparent 62%
+      ),
+      var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .cyber-card {
+    border: 1px solid rgba(57, 255, 20, 0.14);
+    background: rgba(8, 18, 34, 0.55);
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.08) inset;
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(10px);
+    transition: transform var(--transition-normal),
+      border-color var(--transition-normal),
+      box-shadow var(--transition-normal),
+      background var(--transition-normal);
+  }
+  .cyber-card:hover {
+    transform: translate3d(0, -2px, 0);
+    border-color: rgba(0, 229, 255, 0.28);
+    background: rgba(8, 18, 34, 0.7);
+    box-shadow: var(--shadow-elevated), 0 0 0 1px rgba(0, 229, 255, 0.12) inset;
+  }
+
+  .cyber-button {
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(57, 255, 20, 0.18);
+    background: rgba(8, 18, 34, 0.55);
+    padding: 0.75rem 1rem;
+    transition: transform var(--transition-fast),
+      border-color var(--transition-fast),
+      box-shadow var(--transition-fast),
+      background var(--transition-fast);
+  }
+  .cyber-button:hover {
+    transform: translate3d(0, -1px, 0);
+    border-color: rgba(0, 229, 255, 0.32);
+    box-shadow: var(--shadow-glow-cyan);
+  }
+  .cyber-button:active {
+    transform: translate3d(0, 0, 0);
+  }
+  .cyber-button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .cyber-button-primary {
+    border-color: rgba(57, 255, 20, 0.34);
+    box-shadow: 0 0 0 1px rgba(57, 255, 20, 0.12) inset;
+  }
+  .cyber-button-secondary {
+    border-color: rgba(0, 229, 255, 0.34);
+    box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.12) inset;
+  }
+
+  .cyber-input {
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(57, 255, 20, 0.18);
+    background: rgba(2, 6, 23, 0.55);
+    padding: 0.7rem 0.9rem;
+    transition: border-color var(--transition-fast),
+      box-shadow var(--transition-fast),
+      background var(--transition-fast);
+  }
+  .cyber-input:hover {
+    border-color: rgba(0, 229, 255, 0.24);
+  }
+  .cyber-input:focus {
+    outline: none;
+    border-color: rgba(0, 229, 255, 0.38);
+    box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.12);
+    background: rgba(2, 6, 23, 0.72);
+  }
+
+  .terminal-text {
+    font-family: var(--font-code);
+    letter-spacing: 0.02em;
+  }
+
+  .glow-text {
+    text-shadow: 0 0 18px rgba(0, 229, 255, 0.18);
+  }
+}
+
+@layer utilities {
+  @keyframes cyber-glow {
+    0% {
+      box-shadow: 0 0 0 rgba(57, 255, 20, 0);
+    }
+    50% {
+      box-shadow: var(--shadow-glow);
+    }
+    100% {
+      box-shadow: 0 0 0 rgba(57, 255, 20, 0);
+    }
+  }
+
+  @keyframes cyber-fade-up {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes cyber-grid-pan {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    100% {
+      transform: translate3d(-48px, -48px, 0);
+    }
+  }
+
+  @keyframes cyber-scan {
+    0% {
+      transform: translate3d(0, -12px, 0);
+    }
+    100% {
+      transform: translate3d(0, 12px, 0);
+    }
+  }
+
+  @keyframes cyber-in {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0);
+      filter: blur(3px);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes cyber-cursor {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .cyber-entrance {
+    animation: cyber-in 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .cyber-fade-up {
+    animation: cyber-fade-up 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .neon-pulse {
+    animation: cyber-glow 2.8s ease-in-out infinite;
+  }
+
+  .cyber-cursor {
+    display: inline-block;
+    color: currentColor;
+    animation: cyber-cursor 1s steps(1, end) infinite;
+  }
+
+  .cyber-grid {
+    opacity: 0.18;
+    background-image:
+      linear-gradient(to right, currentColor 1px, transparent 1px),
+      linear-gradient(to bottom, currentColor 1px, transparent 1px);
+    background-size: 48px 48px;
+    animation: cyber-grid-pan 18s linear infinite;
+    mask-image: radial-gradient(
+      60% 60% at 50% 35%,
+      rgb(0 0 0 / 1) 0%,
+      rgb(0 0 0 / 0.7) 55%,
+      rgb(0 0 0 / 0) 100%
+    );
+  }
+
+  .cyber-scanlines {
+    opacity: 0.14;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      currentColor 0px,
+      currentColor 1px,
+      transparent 1px,
+      transparent 5px
+    );
+    animation: cyber-scan 2.4s ease-in-out infinite alternate;
+    mix-blend-mode: screen;
+  }
+
+  .cyber-vignette {
+    background: radial-gradient(
+      80% 55% at 50% 30%,
+      transparent 0%,
+      rgb(0 0 0 / 0.55) 70%,
+      rgb(0 0 0 / 0.85) 100%
+    );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cyber-entrance,
+    .cyber-fade-up,
+    .neon-pulse,
+    .cyber-grid,
+    .cyber-scanlines,
+    .cyber-cursor {
+      animation: none !important;
+    }
+  }
 }
