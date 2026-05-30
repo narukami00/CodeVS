@@ -10,7 +10,7 @@ const navLinkClass = ({ isActive }) =>
 
 function Navbar() {
   return (
-    <header className="h-16 border-b border-slate-800 bg-slate-950 text-slate-100">
+    <header className="h-16 border-b border-white/5 bg-[var(--color-bg)] text-[var(--color-text)]">
       <nav className="mx-auto flex h-full max-w-6xl items-center justify-between px-4">
         <NavLink to="/" className="text-lg font-bold tracking-wide">
           CodeVS

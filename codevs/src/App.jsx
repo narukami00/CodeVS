@@ -10,7 +10,7 @@ function App() {
   return (
     <>
       <Navbar />
-      <main className="min-h-[calc(100vh-4rem)] bg-slate-950 text-slate-100">
+      <main className="app-shell min-h-[calc(100vh-4rem)]">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/lobby" element={<Lobby />} />
