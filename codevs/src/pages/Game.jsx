@@ -43,11 +43,11 @@ function StatPill({ label, value, tone = 'neutral' }) {
         : 'border-white/10 text-slate-200'
 
   return (
-    <div className="rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3">
+    <div className="rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 sm:px-4 sm:py-3">
       <div className="font-mono text-[10px] tracking-[0.22em] text-slate-400">
         {label}
       </div>
-      <div className={['mt-1 font-mono text-base', toneClass].join(' ')}>
+      <div className={['mt-1 font-mono text-sm sm:text-base', toneClass].join(' ')}>
         {value}
       </div>
     </div>
@@ -89,9 +89,72 @@ function CodeGhostText({ snippet, mode, cursorIndex, charStates, progressIndex }
   }
 
   return (
-    <pre className="m-0 whitespace-pre-wrap break-words font-mono text-sm leading-relaxed">
+    <pre className="m-0 whitespace-pre font-mono text-[13px] leading-relaxed sm:text-sm">
       <code>{Array.from(snippet).map(renderChar)}</code>
     </pre>
+  )
+}
+
+function ProgressBar({ percent, tone = 'info' }) {
+  const clamped = clamp(percent, 0, 100)
+  const barTone =
+    tone === 'good'
+      ? 'bg-emerald-300/90 shadow-[0_0_18px_rgba(57,255,20,0.2)]'
+      : 'bg-cyan-300/90 shadow-[0_0_18px_rgba(0,229,255,0.2)]'
+
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full border border-white/10 bg-slate-950/60">
+      <div
+        className={['h-full rounded-full transition-[width] duration-300', barTone].join(' ')}
+        style={{ width: `${clamped}%` }}
+        aria-hidden="true"
+      />
+    </div>
+  )
+}
+
+function CompactOpponentCard({ player, progressPercent, onSimulateOpponent }) {
+  return (
+    <section className="cyber-card relative overflow-hidden p-4 sm:p-5" aria-label="Opponent progress">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 [background:radial-gradient(520px_240px_at_50%_0%,var(--color-secondary-soft),transparent_65%)] hover:opacity-100"
+      />
+
+      <div className="relative flex items-start justify-between gap-3">
+        <div>
+          <div className="font-mono text-xs tracking-widest text-slate-400">OPPONENT</div>
+          <div className="mt-1 text-base font-semibold text-slate-100">{player.username}</div>
+          <div className="mt-1 font-mono text-xs text-slate-400">
+            Progress <span className="text-cyan-200">{formatPercent(progressPercent)}</span>
+          </div>
+        </div>
+
+        <div
+          className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-slate-950/45 font-mono text-sm text-slate-100"
+          aria-hidden="true"
+        >
+          {Math.round(progressPercent)}
+        </div>
+      </div>
+
+      <div className="relative mt-4">
+        <ProgressBar percent={progressPercent} tone="info" />
+      </div>
+
+      <div className="relative mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="font-mono text-xs text-slate-400">
+          TODO: Firebase-driven opponent progress.
+        </div>
+        <button
+          type="button"
+          onClick={onSimulateOpponent}
+          className="cyber-button cyber-button-secondary w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
+        >
+          Simulate
+        </button>
+      </div>
+    </section>
   )
 }
 
@@ -155,11 +218,15 @@ function PlayerPanel({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
           <StatPill label="PROGRESS" value={formatPercent(progressPercent)} tone="info" />
           <StatPill label="WPM" value={wpm} tone="neutral" />
-          <StatPill label="ACCURACY" value={accuracy} tone="good" />
-          <StatPill label="ELAPSED" value={elapsed} tone="neutral" />
+          <div className="hidden sm:block">
+            <StatPill label="ACCURACY" value={accuracy} tone="good" />
+          </div>
+          <div className="hidden sm:block">
+            <StatPill label="ELAPSED" value={elapsed} tone="neutral" />
+          </div>
         </div>
       </header>
 
@@ -176,7 +243,7 @@ function PlayerPanel({
           onBlur={isOpponent ? undefined : onBlur}
           className={
             [
-              'relative rounded-2xl border bg-slate-950/45 p-4 sm:p-5',
+              'relative max-w-full overflow-auto rounded-2xl border bg-slate-950/45 p-4 sm:p-5',
               'outline-none transition',
               isOpponent
                 ? 'cursor-default border-white/5 opacity-85'
@@ -187,9 +254,9 @@ function PlayerPanel({
           }
         >
           {!isOpponent && !isFocused && cursorIndex === 0 ? (
-            <div className="pointer-events-none absolute inset-x-4 top-4 rounded-xl border border-white/5 bg-slate-950/60 px-3 py-2 text-sm text-slate-300 backdrop-blur sm:inset-x-5">
+            <div className="pointer-events-none absolute inset-x-4 top-4 rounded-xl border border-white/5 bg-slate-950/60 px-3 py-2 text-xs text-slate-300 backdrop-blur sm:inset-x-5 sm:text-sm">
               <span className="font-mono text-xs tracking-widest text-slate-400">TIP</span>
-              <div className="mt-1">Click here and start typing.</div>
+              <div className="mt-1">Tap the code area and start typing.</div>
             </div>
           ) : null}
 
@@ -390,7 +457,7 @@ function Game() {
 
       <div className="mx-auto min-h-[calc(100vh-4rem)] max-w-6xl px-4 py-10 sm:py-12">
         <div className="cyber-entrance">
-          <header className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-5 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <header className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
               <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-3 py-1.5">
                 <span className="font-mono text-xs tracking-widest text-emerald-300/90">
@@ -413,13 +480,24 @@ function Game() {
               <p className="mt-1.5 text-sm text-slate-300">
                 No time limit. Cursor only advances on correct characters.
               </p>
+
+              <div className="mt-4 grid gap-2 sm:hidden" aria-label="Mobile match bar">
+                <div className="grid grid-cols-2 gap-2">
+                  <StatPill label="YOU" value={formatPercent(currentProgressPercent)} tone="good" />
+                  <StatPill label="OPP" value={formatPercent(opponentProgressPercent)} tone="info" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <StatPill label="WPM" value={wpmValue} tone="neutral" />
+                  <StatPill label="ACC" value={accuracyValue} tone="good" />
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
               <button
                 type="button"
                 onClick={() => navigate('/lobby')}
-                className="cyber-button font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className="cyber-button w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
               >
                 Exit
               </button>
@@ -427,7 +505,7 @@ function Game() {
           </header>
 
           <div className="mx-auto mt-8 grid w-full max-w-6xl gap-6">
-            <div className="grid items-stretch gap-6 md:grid-cols-[1fr_auto_1fr]">
+            <div className="grid items-stretch gap-6 md:grid-cols-2 xl:grid-cols-[1fr_auto_1fr]">
               <PlayerPanel
                 side="current"
                 title="YOU"
@@ -449,7 +527,7 @@ function Game() {
                 opponentProgressIndex={opponentProgressIndex}
               />
 
-              <div className="flex items-center justify-center">
+              <div className="hidden items-center justify-center xl:flex">
                 <div className="flex flex-col items-center gap-3">
                   <div className="rounded-full border border-cyan-400/30 bg-slate-950/50 px-5 py-2 font-mono text-lg font-semibold tracking-widest text-cyan-300 shadow-[var(--shadow-glow-cyan)]">
                     VS
@@ -460,30 +538,40 @@ function Game() {
                 </div>
               </div>
 
-              <PlayerPanel
-                side="opponent"
-                title="OPPONENT"
+              <div className="hidden md:block">
+                <PlayerPanel
+                  side="opponent"
+                  title="OPPONENT"
+                  player={mockPlayers.opponent}
+                  snippet={snippet}
+                  progressPercent={opponentProgressPercent}
+                  wpm="—"
+                  accuracy="—"
+                  elapsed={elapsedLabel}
+                  isActive={false}
+                  isFocused={false}
+                  onClickFocus={undefined}
+                  onFocus={undefined}
+                  onBlur={undefined}
+                  typingAreaRef={undefined}
+                  onKeyDown={undefined}
+                  charStates={charStates}
+                  cursorIndex={cursorIndex}
+                  opponentProgressIndex={opponentProgressIndex}
+                  onSimulateOpponent={handleSimulateOpponent}
+                />
+              </div>
+            </div>
+
+            <div className="md:hidden">
+              <CompactOpponentCard
                 player={mockPlayers.opponent}
-                snippet={snippet}
                 progressPercent={opponentProgressPercent}
-                wpm="—"
-                accuracy="—"
-                elapsed={elapsedLabel}
-                isActive={false}
-                isFocused={false}
-                onClickFocus={undefined}
-                onFocus={undefined}
-                onBlur={undefined}
-                typingAreaRef={undefined}
-                onKeyDown={undefined}
-                charStates={charStates}
-                cursorIndex={cursorIndex}
-                opponentProgressIndex={opponentProgressIndex}
                 onSimulateOpponent={handleSimulateOpponent}
               />
             </div>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur sm:p-7">
+            <section className="hidden rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur sm:p-7 md:block">
               <h2 className="font-mono text-base font-semibold tracking-wide text-slate-100">
                 ENGINE NOTES
               </h2>

@@ -391,7 +391,7 @@ function Leaderboard() {
                 type="button"
                 onClick={handleRefresh}
                 disabled={isLoading}
-                className="cyber-button cyber-button-secondary font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                className="cyber-button cyber-button-secondary w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
               >
                 {isLoading ? 'Syncing…' : 'Refresh'}
               </button>
