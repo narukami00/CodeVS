@@ -249,11 +249,11 @@ function Result() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={() => navigate('/')}
-                    className="cyber-button cyber-button-primary font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                    className="cyber-button cyber-button-primary w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
                   >
                     Back to Home
                   </button>
@@ -262,7 +262,7 @@ function Result() {
                     <button
                       type="button"
                       onClick={handleRematch}
-                      className="cyber-button cyber-button-secondary font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
+                      className="cyber-button cyber-button-secondary w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
                     >
                       Request Rematch
                     </button>
