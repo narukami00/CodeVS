@@ -1,17 +1,62 @@
 [
   {
-    "id": "cpp_001",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "cpp-001",
+    "language": "cpp",
+    "title": "Vector Sum",
+    "code": "std::vector<int> nums = {4, 8, 15, 16};\nint total = 0;\nfor (int v : nums) {\n  total += v;\n}\nstd::cout << total;"
   },
   {
-    "id": "cpp_002",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "cpp-002",
+    "language": "cpp",
+    "title": "Find Maximum",
+    "code": "std::vector<int> a = {9, 3, 7, 12, 5};\nint mx = a[0];\nfor (int x : a) {\n  if (x > mx) mx = x;\n}\nstd::cout << mx;"
   },
   {
-    "id": "cpp_003",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "cpp-003",
+    "language": "cpp",
+    "title": "Count Evens",
+    "code": "std::vector<int> a = {3, 4, 7, 10, 11, 12};\nint evens = 0;\nfor (int x : a) {\n  if (x % 2 == 0) evens++;\n}\nstd::cout << evens;"
+  },
+  {
+    "id": "cpp-004",
+    "language": "cpp",
+    "title": "Reverse String",
+    "code": "std::string s = \"CodeVS\";\nstd::reverse(s.begin(), s.end());\nstd::cout << s << \" (\" << s.size() << \")\";"
+  },
+  {
+    "id": "cpp-005",
+    "language": "cpp",
+    "title": "Clamp Function",
+    "code": "int clamp(int x, int lo, int hi) {\n  return x < lo ? lo : (x > hi ? hi : x);\n}\nstd::cout << clamp(17, 0, 10);"
+  },
+  {
+    "id": "cpp-006",
+    "language": "cpp",
+    "title": "Map Frequency",
+    "code": "std::vector<std::string> words = {\"code\", \"vs\", \"code\", \"play\"};\nstd::map<std::string, int> freq;\nfor (const auto& w : words) freq[w]++;\nstd::cout << freq[\"code\"];"
+  },
+  {
+    "id": "cpp-007",
+    "language": "cpp",
+    "title": "Sort Vector",
+    "code": "std::vector<int> a = {9, 3, 7, 1};\nstd::sort(a.begin(), a.end());\nfor (int x : a) std::cout << x << ' ';"
+  },
+  {
+    "id": "cpp-008",
+    "language": "cpp",
+    "title": "Struct Usage",
+    "code": "struct Player {\n  std::string name;\n  int score;\n};\nPlayer p{\"You\", 42};\nstd::cout << p.name << ':' << p.score;"
+  },
+  {
+    "id": "cpp-009",
+    "language": "cpp",
+    "title": "Class Basics",
+    "code": "class Player {\n public:\n  std::string name;\n  int score;\n  Player(std::string n) : name(n), score(0) {}\n};\nPlayer p(\"You\");\nstd::cout << p.name;"
+  },
+  {
+    "id": "cpp-010",
+    "language": "cpp",
+    "title": "Try Catch Division",
+    "code": "int a = 10, b = 0;\ntry {\n  if (b == 0) throw std::runtime_error(\"zero\");\n  std::cout << a / b;\n} catch (const std::exception&) {\n  std::cout << \"invalid\";\n}"
   }
 ]
