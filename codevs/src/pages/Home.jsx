@@ -22,10 +22,8 @@ function Home() {
     'Random'
 
   const previewSnippets = useMemo(() => {
-    if (selectedLanguage === 'c' || selectedLanguage === 'python') {
-      return getSnippetsByLanguage(selectedLanguage)
-    }
-    return []
+    if (selectedLanguage === 'random') return []
+    return getSnippetsByLanguage(selectedLanguage)
   }, [selectedLanguage])
 
   return (
@@ -145,7 +143,7 @@ function Home() {
                   Random will choose from the available snippet bank during
                   matchmaking.
                 </div>
-              ) : selectedLanguage !== 'c' && selectedLanguage !== 'python' ? (
+              ) : previewSnippets.length === 0 ? (
                 <div className="mt-5 rounded-xl border border-white/5 bg-slate-950/40 p-4 text-base text-slate-300">
                   No preview snippets available for this language yet.
                 </div>
