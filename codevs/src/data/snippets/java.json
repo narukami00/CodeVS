@@ -1,17 +1,62 @@
 [
   {
-    "id": "java_001",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "java-001",
+    "language": "java",
+    "title": "Array Sum",
+    "code": "int[] nums = {4, 8, 15, 16};\nint total = 0;\nfor (int v : nums) {\n  total += v;\n}\nSystem.out.println(total);"
   },
   {
-    "id": "java_002",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "java-002",
+    "language": "java",
+    "title": "Find Maximum",
+    "code": "int[] a = {9, 3, 7, 12, 5};\nint mx = a[0];\nfor (int x : a) {\n  if (x > mx) mx = x;\n}\nSystem.out.println(mx);"
   },
   {
-    "id": "java_003",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "java-003",
+    "language": "java",
+    "title": "Count Evens",
+    "code": "int[] a = {3, 4, 7, 10, 11, 12};\nint evens = 0;\nfor (int x : a) {\n  if (x % 2 == 0) evens++;\n}\nSystem.out.println(evens);"
+  },
+  {
+    "id": "java-004",
+    "language": "java",
+    "title": "Reverse String",
+    "code": "String s = \"CodeVS\";\nString rev = new StringBuilder(s).reverse().toString();\nSystem.out.println(rev);"
+  },
+  {
+    "id": "java-005",
+    "language": "java",
+    "title": "Clamp Method",
+    "code": "static int clamp(int x, int lo, int hi) {\n  return x < lo ? lo : (x > hi ? hi : x);\n}\nSystem.out.println(clamp(17, 0, 10));"
+  },
+  {
+    "id": "java-006",
+    "language": "java",
+    "title": "HashMap Frequency",
+    "code": "Map<String, Integer> freq = new HashMap<>();\nString[] words = {\"code\", \"vs\", \"code\", \"play\"};\nfor (String w : words) {\n  freq.put(w, freq.getOrDefault(w, 0) + 1);\n}\nSystem.out.println(freq.get(\"code\"));"
+  },
+  {
+    "id": "java-007",
+    "language": "java",
+    "title": "Sort ArrayList",
+    "code": "List<Integer> nums = new ArrayList<>(List.of(9, 3, 7, 1));\nCollections.sort(nums);\nSystem.out.println(nums.get(0));"
+  },
+  {
+    "id": "java-008",
+    "language": "java",
+    "title": "Simple Class",
+    "code": "class Player {\n  String name;\n  int score;\n  Player(String n) { name = n; score = 0; }\n}\nPlayer p = new Player(\"You\");\nSystem.out.println(p.name);"
+  },
+  {
+    "id": "java-009",
+    "language": "java",
+    "title": "Enhanced For",
+    "code": "String[] names = {\"Ada\", \"Linus\", \"Grace\"};\nfor (String n : names) {\n  System.out.print(n.charAt(0));\n}\nSystem.out.println();"
+  },
+  {
+    "id": "java-010",
+    "language": "java",
+    "title": "Try Catch Parse",
+    "code": "try {\n  int x = Integer.parseInt(\"42\");\n  System.out.println(x + 1);\n} catch (NumberFormatException e) {\n  System.out.println(\"invalid\");\n}"
   }
 ]
