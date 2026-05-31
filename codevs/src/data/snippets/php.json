@@ -1,17 +1,62 @@
 [
   {
-    "id": "php_001",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "php-001",
+    "language": "php",
+    "title": "Array Sum",
+    "code": "$numbers = [4, 8, 15, 16];\n$total = array_sum($numbers);\necho $total;"
   },
   {
-    "id": "php_002",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "php-002",
+    "language": "php",
+    "title": "Associative Access",
+    "code": "$player = ['name' => 'neo', 'score' => 42];\necho $player['name'] . ':' . $player['score'];"
   },
   {
-    "id": "php_003",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "php-003",
+    "language": "php",
+    "title": "Function Return",
+    "code": "function clamp($x, $lo, $hi) {\n  return $x < $lo ? $lo : ($x > $hi ? $hi : $x);\n}\necho clamp(17, 0, 10);"
+  },
+  {
+    "id": "php-004",
+    "language": "php",
+    "title": "Foreach Loop",
+    "code": "$nums = [1, 2, 3, 4];\n$sum = 0;\nforeach ($nums as $n) {\n  $sum += $n;\n}\necho $sum;"
+  },
+  {
+    "id": "php-005",
+    "language": "php",
+    "title": "Reverse String",
+    "code": "$s = 'CodeVS';\n$rev = strrev($s);\necho $rev;"
+  },
+  {
+    "id": "php-006",
+    "language": "php",
+    "title": "Word Frequency",
+    "code": "$words = ['code', 'vs', 'code', 'play'];\n$freq = [];\nforeach ($words as $w) {\n  $freq[$w] = ($freq[$w] ?? 0) + 1;\n}\nprint_r($freq);"
+  },
+  {
+    "id": "php-007",
+    "language": "php",
+    "title": "Sort Numbers",
+    "code": "$nums = [9, 3, 7, 1];\nsort($nums);\necho implode(',', $nums);"
+  },
+  {
+    "id": "php-008",
+    "language": "php",
+    "title": "Class Basics",
+    "code": "class Player {\n  public string $name;\n  public int $score;\n  public function __construct($name) {\n    $this->name = $name;\n    $this->score = 0;\n  }\n}\n$p = new Player('You');\necho $p->name;"
+  },
+  {
+    "id": "php-009",
+    "language": "php",
+    "title": "Try Catch",
+    "code": "function safeDiv($a, $b) {\n  try {\n    if ($b === 0) throw new Exception('zero');\n    return $a / $b;\n  } catch (Exception $e) {\n    return null;\n  }\n}\nvar_dump(safeDiv(10, 0));"
+  },
+  {
+    "id": "php-010",
+    "language": "php",
+    "title": "Simple Validation",
+    "code": "function isValidName($name) {\n  return is_string($name) && strlen(trim($name)) >= 3;\n}\nvar_dump(isValidName('neo'));"
   }
 ]

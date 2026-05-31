@@ -1,17 +1,62 @@
 [
   {
-    "id": "js_001",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "javascript-001",
+    "language": "javascript",
+    "title": "Array Reduce Sum",
+    "code": "const numbers = [4, 8, 15, 16];\nconst total = numbers.reduce((sum, n) => sum + n, 0);\nconsole.log(total);"
   },
   {
-    "id": "js_002",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "javascript-002",
+    "language": "javascript",
+    "title": "Filter Active Users",
+    "code": "const users = [{ name: 'Ada', active: true }, { name: 'Neo', active: false }];\nconst active = users.filter((u) => u.active).map((u) => u.name);\nconsole.log(active.join(', '));"
   },
   {
-    "id": "js_003",
-    "title": "Placeholder Title",
-    "code": "// code will be added by the team"
+    "id": "javascript-003",
+    "language": "javascript",
+    "title": "Object Destructuring",
+    "code": "const player = { username: 'neo', score: 42, rank: 7 };\nconst { username, score } = player;\nconsole.log(`${username}:${score}`);"
+  },
+  {
+    "id": "javascript-004",
+    "language": "javascript",
+    "title": "Format Label",
+    "code": "function formatLabel(name, wins) {\n  return `${name.toUpperCase()} | wins=${wins}`;\n}\nconsole.log(formatLabel('codevs', 3));"
+  },
+  {
+    "id": "javascript-005",
+    "language": "javascript",
+    "title": "Map Names",
+    "code": "const names = ['Ada', 'Linus', 'Grace'];\nconst tags = names.map((n, i) => `${i + 1}.${n}`);\nconsole.log(tags);"
+  },
+  {
+    "id": "javascript-006",
+    "language": "javascript",
+    "title": "Word Frequency",
+    "code": "const words = ['code', 'vs', 'code', 'play'];\nconst freq = words.reduce((m, w) => ((m[w] = (m[w] ?? 0) + 1), m), {});\nconsole.log(freq);"
+  },
+  {
+    "id": "javascript-007",
+    "language": "javascript",
+    "title": "Sort By Score",
+    "code": "const board = [{ name: 'A', score: 5 }, { name: 'B', score: 9 }, { name: 'C', score: 7 }];\nboard.sort((a, b) => b.score - a.score);\nconsole.log(board[0].name);"
+  },
+  {
+    "id": "javascript-008",
+    "language": "javascript",
+    "title": "Async Await Demo",
+    "code": "const delay = (ms) => new Promise((r) => setTimeout(r, ms));\nasync function run() {\n  await delay(10);\n  return 'ready';\n}\nrun().then(console.log);"
+  },
+  {
+    "id": "javascript-009",
+    "language": "javascript",
+    "title": "Class Basics",
+    "code": "class Player {\n  constructor(name) {\n    this.name = name;\n    this.score = 0;\n  }\n}\nconsole.log(new Player('You').name);"
+  },
+  {
+    "id": "javascript-010",
+    "language": "javascript",
+    "title": "Try Catch Parse",
+    "code": "try {\n  const data = JSON.parse(\"{\\\"ok\\\":true}\");\n  console.log(data.ok);\n} catch (e) {\n  console.log('invalid');\n}"
   }
 ]
