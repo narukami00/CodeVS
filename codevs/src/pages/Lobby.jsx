@@ -1,27 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ref, onValue, set, update, onDisconnect, remove, serverTimestamp } from 'firebase/database'
+import { db } from '../firebase'
+import { useAuth } from '../contexts/AuthContext'
 import { languageOptions } from '../data/languages'
-
-const mockLobby = {
-  roomId: 'A3X9KP',
-  language: 'python',
-  players: [
-    {
-      id: 'player1',
-      username: 'You',
-      label: 'Player 1',
-      avatarText: 'Y',
-      isCurrentUser: true,
-    },
-    {
-      id: 'player2',
-      username: 'Opponent',
-      label: 'Player 2',
-      avatarText: 'O',
-      isCurrentUser: false,
-    },
-  ],
-}
 
 function StatusBadge({ ready }) {
   const label = ready ? 'Ready' : 'Not Ready'
@@ -54,6 +36,18 @@ function StatusBadge({ ready }) {
 }
 
 function PlayerCard({ player, ready, locked, onToggleReady }) {
+  // If player is null (waiting for opponent)
+  if (!player) {
+    return (
+      <article className="cyber-card flex items-center justify-center p-6 sm:p-7 min-h-[250px]">
+        <div className="flex flex-col items-center gap-4 opacity-50 text-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-cyan-400"></div>
+          <div className="font-mono text-sm tracking-widest text-slate-400">WAITING FOR OPPONENT...</div>
+        </div>
+      </article>
+    )
+  }
+
   const buttonLabel = locked
     ? ready
       ? 'Ready ✓'
@@ -92,13 +86,13 @@ function PlayerCard({ player, ready, locked, onToggleReady }) {
                 [
                   'grid h-12 w-12 place-items-center rounded-full',
                   'border border-white/10 bg-slate-950/40',
-                  'font-mono text-lg text-slate-100',
+                  'font-mono text-lg uppercase text-slate-100',
                   ready ? 'shadow-[var(--shadow-glow)]' : 'shadow-none',
                 ].join(' ')
               }
               aria-hidden="true"
             >
-              {player.avatarText}
+              {player.username.charAt(0)}
             </div>
             <div>
               <div className="text-lg font-semibold text-slate-100">
@@ -115,21 +109,27 @@ function PlayerCard({ player, ready, locked, onToggleReady }) {
       </div>
 
       <div className="mt-6 flex flex-col gap-3">
-        <button
-          type="button"
-          disabled={locked}
-          onClick={onToggleReady}
-          className={
-            [
-              'cyber-button w-full font-mono text-base',
-              buttonTone,
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70',
-            ].join(' ')
-          }
-          aria-pressed={ready}
-        >
-          {buttonLabel}
-        </button>
+        {player.isCurrentUser ? (
+          <button
+            type="button"
+            disabled={locked}
+            onClick={onToggleReady}
+            className={
+              [
+                'cyber-button w-full font-mono text-base',
+                buttonTone,
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70',
+              ].join(' ')
+            }
+            aria-pressed={ready}
+          >
+            {buttonLabel}
+          </button>
+        ) : (
+          <div className="rounded border border-white/10 bg-slate-950/35 p-3 text-center text-sm text-slate-400">
+            Waiting for opponent to signal ready...
+          </div>
+        )}
 
         <div className="rounded-xl border border-white/5 bg-slate-950/35 p-3 text-left">
           <div className="font-mono text-xs tracking-widest text-slate-400">
@@ -192,61 +192,170 @@ function CountdownOverlay({ countdown, isStarting }) {
 
 function Lobby() {
   const [searchParams] = useSearchParams()
+  const roomId = searchParams.get('roomId')
+  const { user } = useAuth()
+  const navigate = useNavigate()
 
-  // TODO: Replace mock lobby data with Firebase room players.
-  // TODO: Read roomId from route param (e.g. /room/:roomId/lobby) once routing is added.
-  const roomId = searchParams.get('roomId') || mockLobby.roomId
-  const languageValue =
-    searchParams.get('language') || searchParams.get('lang') || mockLobby.language
-
-  const languageLabel = useMemo(() => {
-    return (
-      languageOptions.find((opt) => opt.value === languageValue)?.label ||
-      languageValue
-    )
-  }, [languageValue])
-
-  const players = mockLobby.players
-
-  const [readyStates, setReadyStates] = useState(() => ({
-    [players[0].id]: false,
-    [players[1].id]: false,
-  }))
+  const [roomData, setRoomData] = useState(null)
+  const [opponentProfile, setOpponentProfile] = useState(null)
   const [countdown, setCountdown] = useState(null)
   const [isStarting, setIsStarting] = useState(false)
+  const hasLeftRef = useRef(false)
 
-  const bothReady = readyStates[players[0].id] && readyStates[players[1].id]
-  const locked = countdown !== null || isStarting
+  // 1. Sync room data
+  useEffect(() => {
+    if (!user || !roomId) {
+      navigate('/')
+      return
+    }
 
-  const handleStartGame = useCallback(() => {
-    setIsStarting(true)
+    const roomRef = ref(db, `rooms/${roomId}`)
+    let disconnectRef = null
 
-    // TODO: Navigate to Game screen when countdown finishes.
-    // TODO: Replace local countdown with Firebase serverTimestamp countdownStart.
-    console.log('[Lobby] Starting match...', { roomId, language: languageValue })
-  }, [roomId, languageValue])
+    // Setup Disconnect Hook ONCE
+    const playerRef = ref(db, `rooms/${roomId}/players/${user.uid}`)
+    disconnectRef = onDisconnect(playerRef)
+    disconnectRef.remove()
 
-  const handleToggleReady = (playerId) => {
-    if (locked) return
-
-    setReadyStates((prev) => {
-      const next = {
-        ...prev,
-        [playerId]: !prev[playerId],
+    const unsubscribe = onValue(roomRef, async (snap) => {
+      const data = snap.val()
+      
+      if (!data) {
+        if (!hasLeftRef.current && !isStarting) {
+          hasLeftRef.current = true
+          navigate('/')
+        }
+        return
       }
 
-      const nextBothReady = next[players[0].id] && next[players[1].id]
-      if (nextBothReady) {
-        // Both ready: begin 3-second countdown.
-        setCountdown((prevCountdown) => (prevCountdown === null ? 3 : prevCountdown))
+      const playersList = data.players || {}
+      const playerUids = Object.keys(playersList)
+
+      // Ensure we are in this room
+      if (!playerUids.includes(user.uid)) {
+        if (!hasLeftRef.current && !isStarting) {
+           hasLeftRef.current = true
+           navigate('/')
+        }
+        return
       }
 
-      // TODO: Write current user's ready state to /rooms/{roomId}/players/{uid}/ready.
-      return next
+      setRoomData(data)
+
+      // Handle opponent disconnect
+      if (data.status === 'full' && playerUids.length < 2) {
+        hasLeftRef.current = true
+        await remove(roomRef) // Clean up the room
+        navigate('/')
+        return
+      }
+
+      // Fetch opponent profile if they joined
+      const opponentUid = playerUids.find(uid => uid !== user.uid)
+      if (opponentUid) {
+        setOpponentProfile(prev => {
+          if (prev?.uid === opponentUid) return prev // Avoid state update if already set
+          return {
+            uid: opponentUid,
+            username: "Opponent", // TODO: Fetch real username from Firestore
+          }
+        })
+      }
     })
+
+    return () => {
+      unsubscribe()
+      if (disconnectRef) {
+        disconnectRef.cancel()
+      }
+    }
+  }, [user, roomId, navigate, isStarting])
+
+  const handleLeaveLobby = async () => {
+    if (locked || hasLeftRef.current) return
+    hasLeftRef.current = true
+    
+    // Deleting the entire room ensures both players are kicked back to home instantly
+    await remove(ref(db, `rooms/${roomId}`))
+    navigate('/')
   }
 
-  // Tick countdown.
+  // Process players for rendering
+  const players = useMemo(() => {
+    if (!roomData) return []
+    const playerArray = []
+    
+    // Add Self
+    playerArray.push({
+      id: user.uid,
+      username: user.username || user?.email?.split('@')[0] || 'Player',
+      label: 'Player 1',
+      isCurrentUser: true,
+      ready: roomData.players[user.uid]?.ready || false
+    })
+
+    // Add Opponent
+    if (opponentProfile) {
+      playerArray.push({
+        id: opponentProfile.uid,
+        username: opponentProfile.username || 'Opponent',
+        label: 'Player 2',
+        isCurrentUser: false,
+        ready: roomData.players[opponentProfile.uid]?.ready || false
+      })
+    } else {
+      playerArray.push(null) // Represents waiting for opponent
+    }
+
+    return playerArray
+  }, [roomData, user, opponentProfile])
+
+  const languageLabel = useMemo(() => {
+    if (!roomData) return 'Loading...'
+    const val = roomData.resolvedLanguage || roomData.language
+    return languageOptions.find((opt) => opt.value === val)?.label || val
+  }, [roomData])
+
+  const bothReady = useMemo(() => {
+    if (players.length < 2 || !players[0] || !players[1]) return false
+    return players[0].ready && players[1].ready
+  }, [players])
+
+  const locked = countdown !== null || isStarting || !players[1]
+
+  const handleStartGame = useCallback(async () => {
+    setIsStarting(true)
+    
+    // Update room status to active if we are creator
+    if (roomData?.creatorUID === user.uid) {
+       await update(ref(db, `rooms/${roomId}`), { status: 'active' })
+    }
+    
+    navigate(`/game?roomId=${roomId}`)
+  }, [roomId, navigate, roomData, user])
+
+  const handleToggleReady = async () => {
+    if (locked) return
+    const currentState = roomData.players[user.uid]?.ready || false
+    await update(ref(db, `rooms/${roomId}/players/${user.uid}`), { ready: !currentState })
+  }
+
+  // Handle countdown automatically when both ready
+  useEffect(() => {
+    if (bothReady && countdown === null && !isStarting) {
+      if (roomData?.creatorUID === user.uid && !roomData.countdownStart) {
+         update(ref(db, `rooms/${roomId}`), { countdownStart: serverTimestamp() })
+      }
+      setCountdown(3)
+    } else if (!bothReady && countdown !== null && !isStarting) {
+      setCountdown(null)
+      if (roomData?.creatorUID === user.uid && roomData.countdownStart) {
+         update(ref(db, `rooms/${roomId}`), { countdownStart: null })
+      }
+    }
+  }, [bothReady, countdown, isStarting, roomId, roomData, user])
+
+  // Tick countdown
   useEffect(() => {
     if (countdown === null || isStarting) return
 
@@ -266,6 +375,8 @@ function Lobby() {
     return () => window.clearTimeout(tickTimer)
   }, [countdown, handleStartGame, isStarting])
 
+  if (!roomData) return null
+
   return (
     <section className="relative isolate overflow-hidden">
       {/* Background overlays (grid + scanlines) */}
@@ -278,8 +389,20 @@ function Lobby() {
         <div className="cyber-vignette absolute inset-0" />
       </div>
 
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center px-4 py-12 sm:py-14">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col justify-center px-4 py-12 sm:py-14">
         <div className="cyber-entrance w-full">
+          
+          {/* Action Bar */}
+          <div className="mb-8 flex justify-start">
+            <button
+              onClick={handleLeaveLobby}
+              className="group flex items-center gap-2 rounded-full border border-red-500/30 bg-slate-950/50 px-5 py-2 text-sm text-red-400 transition hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70"
+            >
+              <span aria-hidden="true" className="transition-transform group-hover:-translate-x-1">←</span> 
+              <span className="font-mono tracking-widest">ABORT MATCH</span>
+            </button>
+          </div>
+
           <header className="mx-auto max-w-3xl text-center">
             <div className="inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-slate-800 bg-slate-950/40 px-4 py-1.5 text-sm text-slate-200 backdrop-blur">
               <span className="font-mono text-cyan-300/90">BATTLE LOBBY</span>
@@ -324,9 +447,9 @@ function Lobby() {
             >
               <PlayerCard
                 player={players[0]}
-                ready={readyStates[players[0].id]}
+                ready={players[0]?.ready}
                 locked={locked}
-                onToggleReady={() => handleToggleReady(players[0].id)}
+                onToggleReady={handleToggleReady}
               />
 
               <div className="flex items-center justify-center">
@@ -334,19 +457,21 @@ function Lobby() {
                   <div className="rounded-full border border-cyan-400/30 bg-slate-950/50 px-5 py-2 font-mono text-lg font-semibold tracking-widest text-cyan-300 shadow-[var(--shadow-glow-cyan)]">
                     VS
                   </div>
-                  <div className="font-mono text-xs text-slate-400">
-                    {bothReady
-                      ? 'SYNCED: READY'
-                      : 'WAITING: READY SIGNALS'}
+                  <div className="font-mono text-xs text-slate-400 text-center">
+                    {!players[1] 
+                      ? 'WAITING FOR OPPONENT'
+                      : bothReady
+                        ? 'SYNCED: READY'
+                        : 'WAITING: READY SIGNALS'}
                   </div>
                 </div>
               </div>
 
               <PlayerCard
                 player={players[1]}
-                ready={readyStates[players[1].id]}
+                ready={players[1]?.ready}
                 locked={locked}
-                onToggleReady={() => handleToggleReady(players[1].id)}
+                onToggleReady={() => {}}
               />
             </div>
 
@@ -357,18 +482,20 @@ function Lobby() {
                     LOBBY STATUS
                   </h2>
                   <p className="mt-1.5 text-base text-slate-300">
-                    {isStarting
-                      ? 'Initializing match. Stand by.'
-                      : bothReady
-                        ? 'Both players are ready. Countdown engaged.'
-                        : 'Waiting for both players to press Ready.'}
+                    {!players[1]
+                      ? 'Waiting for a second player to join...'
+                      : isStarting
+                        ? 'Initializing match. Stand by.'
+                        : bothReady
+                          ? 'Both players are ready. Countdown engaged.'
+                          : 'Waiting for both players to press Ready.'}
                   </p>
                 </div>
 
                 <div className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3.5">
                   <div className="text-xs text-slate-400">Signals</div>
                   <div className="mt-1 font-mono text-base text-slate-100">
-                    {Object.values(readyStates).filter(Boolean).length}/2 READY
+                    {players.filter(p => p?.ready).length}/2 READY
                   </div>
                 </div>
               </div>
@@ -398,14 +525,8 @@ function Lobby() {
                   <div className="font-mono text-xs tracking-widest text-slate-400">
                     SYNC
                   </div>
-                  <div className="mt-1.5 font-mono text-slate-100">LOCAL DEMO</div>
+                  <div className="mt-1.5 font-mono text-slate-100 text-cyan-300">LIVE</div>
                 </div>
-              </div>
-
-              <div className="mt-5 text-xs text-slate-400">
-                TODO: Listen to both players’ ready states from Firebase RTDB at
-                <span className="font-mono"> /rooms/{'{roomId}'}/players/{'{uid}'}/ready</span> and trigger countdown from
-                <span className="font-mono"> /rooms/{'{roomId}'}/countdownStart</span>.
               </div>
             </section>
           </div>
