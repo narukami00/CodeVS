@@ -4,6 +4,7 @@ import { ref, onValue, update, onDisconnect, remove } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { languageOptions } from '../data/languages'
+import { getSnippetsByLanguage } from '../data/snippetBank'
 
 const mockSnippet = `function calculateScore(hits, attempts) {
   const accuracy = hits / attempts;
@@ -354,12 +355,21 @@ function Game() {
     return languageOptions.find((opt) => opt.value === languageValue)?.label || languageValue
   }, [languageValue])
 
-  // TODO: Load snippet by snippetId from Firebase room state.
-  const snippet = mockSnippet
+  const snippet = useMemo(() => {
+    if (!roomData?.snippetId) return mockSnippet
+    const list = getSnippetsByLanguage(languageValue)
+    const match = list.find(s => s.id === roomData.snippetId)
+    return match ? match.code : mockSnippet
+  }, [roomData?.snippetId, languageValue])
 
   const [cursorIndex, setCursorIndex] = useState(0)
-  const [charStates, setCharStates] = useState(() => Array.from({ length: snippet.length }, () => ''))
+  const [charStates, setCharStates] = useState([])
   const [isFocused, setIsFocused] = useState(false)
+  
+  useEffect(() => {
+    setCharStates(Array.from({ length: snippet.length }, () => ''))
+    setCursorIndex(0)
+  }, [snippet])
 
   const [startedAt, setStartedAt] = useState(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
