@@ -1,17 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ref, onValue, update, onDisconnect, remove } from 'firebase/database'
+import { db } from '../firebase'
+import { useAuth } from '../contexts/AuthContext'
 import { languageOptions } from '../data/languages'
-
-const mockPlayers = {
-  current: {
-    username: 'You',
-    avatarText: 'Y',
-  },
-  opponent: {
-    username: 'Opponent',
-    avatarText: 'O',
-  },
-}
 
 const mockSnippet = `function calculateScore(hits, attempts) {
   const accuracy = hits / attempts;
@@ -113,7 +105,7 @@ function ProgressBar({ percent, tone = 'info' }) {
   )
 }
 
-function CompactOpponentCard({ player, progressPercent, onSimulateOpponent }) {
+function CompactOpponentCard({ player, progressPercent }) {
   return (
     <section className="cyber-card relative overflow-hidden p-4 sm:p-5" aria-label="Opponent progress">
       <div
@@ -144,15 +136,8 @@ function CompactOpponentCard({ player, progressPercent, onSimulateOpponent }) {
 
       <div className="relative mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="font-mono text-xs text-slate-400">
-          TODO: Firebase-driven opponent progress.
+          Live opponent progress synced via Firebase.
         </div>
-        <button
-          type="button"
-          onClick={onSimulateOpponent}
-          className="cyber-button cyber-button-secondary w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
-        >
-          Simulate
-        </button>
       </div>
     </section>
   )
@@ -176,8 +161,7 @@ function PlayerPanel({
   onKeyDown,
   charStates,
   cursorIndex,
-  opponentProgressIndex,
-  onSimulateOpponent,
+  opponentProgressIndex
 }) {
   const isOpponent = side === 'opponent'
 
@@ -272,20 +256,12 @@ function PlayerPanel({
         {isOpponent ? (
           <div className="mt-4 flex items-center justify-between gap-3">
             <div className="font-mono text-xs text-slate-400">
-              TODO: Read opponent progress from Firebase RTDB.
+              Live opponent progress synced via Firebase.
             </div>
-            <button
-              type="button"
-              onClick={onSimulateOpponent}
-              className="cyber-button cyber-button-secondary font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70"
-            >
-              Simulate opponent progress
-            </button>
           </div>
         ) : (
           <div className="mt-4 font-mono text-xs text-slate-400">
-            TODO: Use a focused div with robust key handling (tabs/IME), then write progress to
-            <span className="font-mono"> /rooms/{'{roomId}'}/players/{'{uid}'}/progress</span>.
+            Progress automatically synced to RTDB.
           </div>
         )}
       </section>
@@ -296,16 +272,90 @@ function PlayerPanel({
 function Game() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { user } = useAuth()
 
-  // TODO: Read roomId, snippetId, player UIDs from route/auth state.
-  const roomId = searchParams.get('roomId') || 'A3X9KP'
-  const languageValue = searchParams.get('language') || searchParams.get('lang') || 'javascript'
+  const roomId = searchParams.get('roomId')
+  const [roomData, setRoomData] = useState(null)
+  const [opponentProfile, setOpponentProfile] = useState(null)
+  
+  const hasLeftRef = useRef(false)
+  const typingRef = useRef(null)
 
+  // 1. Sync room data
+  useEffect(() => {
+    if (!user || !roomId) {
+      navigate('/')
+      return
+    }
+
+    const roomRef = ref(db, `rooms/${roomId}`)
+    let disconnectRef = null
+
+    // Setup Disconnect Hook ONCE
+    const playerRef = ref(db, `rooms/${roomId}/players/${user.uid}`)
+    disconnectRef = onDisconnect(playerRef)
+    disconnectRef.remove()
+
+    const unsubscribe = onValue(roomRef, async (snap) => {
+      const data = snap.val()
+      
+      if (!data) {
+        if (!hasLeftRef.current) {
+          hasLeftRef.current = true
+          navigate('/')
+        }
+        return
+      }
+
+      setRoomData(data)
+
+      const playersList = data.players || {}
+      const playerUids = Object.keys(playersList)
+
+      // Ensure we are in this room
+      if (!playerUids.includes(user.uid)) {
+        if (!hasLeftRef.current) {
+           hasLeftRef.current = true
+           navigate('/')
+        }
+        return
+      }
+
+      // Handle opponent disconnect (ragequit)
+      if (playerUids.length < 2 && !data.winner) {
+        hasLeftRef.current = true
+        // Opponent left, we win by default
+        await update(roomRef, { winner: user.uid, reason: 'opponent_disconnected' })
+        return
+      }
+
+      // Fetch opponent profile if they joined
+      const oppUid = playerUids.find(uid => uid !== user.uid)
+      if (oppUid) {
+        setOpponentProfile(prev => {
+          if (prev?.uid === oppUid) return prev
+          return { uid: oppUid, username: "Opponent" } // In future, fetch real username here
+        })
+      }
+
+      // Transition to result screen if there is a winner
+      if (data.winner) {
+         hasLeftRef.current = true
+         navigate(`/result?roomId=${roomId}`)
+      }
+    })
+
+    return () => {
+      unsubscribe()
+      if (disconnectRef) {
+        disconnectRef.cancel()
+      }
+    }
+  }, [user, roomId, navigate])
+
+  const languageValue = roomData?.resolvedLanguage || roomData?.language || searchParams.get('language') || 'javascript'
   const languageLabel = useMemo(() => {
-    return (
-      languageOptions.find((opt) => opt.value === languageValue)?.label ||
-      languageValue
-    )
+    return languageOptions.find((opt) => opt.value === languageValue)?.label || languageValue
   }, [languageValue])
 
   // TODO: Load snippet by snippetId from Firebase room state.
@@ -320,11 +370,8 @@ function Game() {
   const [totalKeystrokes, setTotalKeystrokes] = useState(0)
   const [correctKeystrokes, setCorrectKeystrokes] = useState(0)
 
-  const [opponentProgressIndex, setOpponentProgressIndex] = useState(() =>
-    Math.floor(snippet.length * 0.18),
-  )
-
-  const typingRef = useRef(null)
+  // Derive opponent progress from Firebase
+  const opponentProgressIndex = roomData?.players?.[opponentProfile?.uid]?.progress || 0
 
   // Keep a lightweight clock for elapsed time/WPM placeholders.
   useEffect(() => {
@@ -364,11 +411,10 @@ function Game() {
   const handleTypingBlur = () => setIsFocused(false)
 
   const handleKeyDown = (e) => {
-    if (e.defaultPrevented) return
+    if (e.defaultPrevented || roomData?.winner) return
     if (e.ctrlKey || e.metaKey || e.altKey) return
 
     const key = e.key
-
     if (key === 'Escape') return
 
     if (key === 'Tab') {
@@ -386,6 +432,9 @@ function Game() {
           next[nextIndex] = ''
           return next
         })
+        
+        // Sync progress regression
+        update(ref(db, `rooms/${roomId}/players/${user.uid}`), { progress: nextIndex })
         return nextIndex
       })
       return
@@ -422,10 +471,12 @@ function Game() {
       const nextIndex = cursorIndex + 1
       setCursorIndex(nextIndex)
 
+      // Sync progress to Firebase
+      update(ref(db, `rooms/${roomId}/players/${user.uid}`), { progress: nextIndex })
+
       if (nextIndex >= snippet.length) {
-        // TODO: Write winner to /rooms/{roomId}/winner when currentIndex reaches snippet.length.
-        // TODO: Navigate to Result screen when winner is set.
-        console.log('[Game] Finished snippet (local demo).', { roomId })
+        // We won! Write to database and let the onValue hook route us to Result
+        update(ref(db, `rooms/${roomId}`), { winner: user.uid })
       }
       return
     }
@@ -438,12 +489,26 @@ function Game() {
     })
   }
 
-  const handleSimulateOpponent = () => {
-    // TODO: Replace with Firebase-driven opponent progress.
-    setOpponentProgressIndex((prev) => {
-      const step = Math.max(2, Math.floor(snippet.length * 0.04))
-      return clamp(prev + step, 0, snippet.length)
-    })
+  const handleExit = async () => {
+    if (hasLeftRef.current) return
+    hasLeftRef.current = true
+    
+    // If we exit voluntarily during a game, we are conceding.
+    // Remove ourselves from the room. The opponent's onValue listener will detect playerUids < 2 and declare them the winner.
+    await remove(ref(db, `rooms/${roomId}/players/${user.uid}`))
+    navigate('/')
+  }
+
+  if (!roomData) return null
+
+  const currentPlayer = {
+    username: user?.username || user?.email?.split('@')[0] || 'Player',
+    avatarText: (user?.username || user?.email || 'P').charAt(0).toUpperCase(),
+  }
+
+  const oppPlayer = {
+    username: opponentProfile?.username || 'Opponent',
+    avatarText: (opponentProfile?.username || 'O').charAt(0).toUpperCase(),
   }
 
   return (
@@ -496,10 +561,10 @@ function Game() {
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
               <button
                 type="button"
-                onClick={() => navigate('/lobby')}
-                className="cyber-button w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
+                onClick={handleExit}
+                className="cyber-button w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 border-red-500/30 text-red-400 hover:bg-red-500/10 sm:w-auto"
               >
-                Exit
+                Concede & Exit
               </button>
             </div>
           </header>
@@ -509,7 +574,7 @@ function Game() {
               <PlayerPanel
                 side="current"
                 title="YOU"
-                player={mockPlayers.current}
+                player={currentPlayer}
                 snippet={snippet}
                 progressPercent={currentProgressPercent}
                 wpm={wpmValue}
@@ -542,7 +607,7 @@ function Game() {
                 <PlayerPanel
                   side="opponent"
                   title="OPPONENT"
-                  player={mockPlayers.opponent}
+                  player={oppPlayer}
                   snippet={snippet}
                   progressPercent={opponentProgressPercent}
                   wpm="—"
@@ -558,43 +623,16 @@ function Game() {
                   charStates={charStates}
                   cursorIndex={cursorIndex}
                   opponentProgressIndex={opponentProgressIndex}
-                  onSimulateOpponent={handleSimulateOpponent}
                 />
               </div>
             </div>
 
             <div className="md:hidden">
               <CompactOpponentCard
-                player={mockPlayers.opponent}
+                player={oppPlayer}
                 progressPercent={opponentProgressPercent}
-                onSimulateOpponent={handleSimulateOpponent}
               />
             </div>
-
-            <section className="hidden rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur sm:p-7 md:block">
-              <h2 className="font-mono text-base font-semibold tracking-wide text-slate-100">
-                ENGINE NOTES
-              </h2>
-              <div className="mt-2 grid gap-3 text-sm text-slate-300 sm:grid-cols-3">
-                <div className="rounded-xl border border-white/5 bg-slate-950/35 p-4">
-                  <div className="font-mono text-xs tracking-widest text-slate-400">INPUT</div>
-                  <div className="mt-1.5">Focusable div + keydown</div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-slate-950/35 p-4">
-                  <div className="font-mono text-xs tracking-widest text-slate-400">CURSOR</div>
-                  <div className="mt-1.5">Advances only on correct</div>
-                </div>
-                <div className="rounded-xl border border-white/5 bg-slate-950/35 p-4">
-                  <div className="font-mono text-xs tracking-widest text-slate-400">SYNC</div>
-                  <div className="mt-1.5">Local demo (Firebase TODO)</div>
-                </div>
-              </div>
-
-              <div className="mt-4 text-xs text-slate-400">
-                TODO: Save final WPM/accuracy to
-                <span className="font-mono"> /rooms/{'{roomId}'}/results/{'{uid}'}</span> and navigate to results when winner is set.
-              </div>
-            </section>
           </div>
         </div>
       </div>
