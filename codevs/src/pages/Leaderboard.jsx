@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
+import { firestore } from '../firebase'
 
 function toNumber(value) {
   if (typeof value === 'number') return value
@@ -18,17 +18,6 @@ function formatWpm(value) {
   return Number.isInteger(roundedToTenth)
     ? String(roundedToTenth)
     : roundedToTenth.toFixed(1)
-}
-
-function parseLeaderboardResponse(payload) {
-  if (Array.isArray(payload)) return payload
-  if (!payload || typeof payload !== 'object') return []
-
-  if (Array.isArray(payload.leaderboard)) return payload.leaderboard
-  if (Array.isArray(payload.data)) return payload.data
-  if (Array.isArray(payload.results)) return payload.results
-
-  return []
 }
 
 function normalizePlayer(raw, index) {
@@ -225,8 +214,6 @@ const leaderboardStore = (() => {
     lastUpdatedIso: '',
   }
 
-  /** @type {AbortController | null} */
-  let activeController = null
   const listeners = new Set()
 
   const emit = () => {
@@ -246,9 +233,6 @@ const leaderboardStore = (() => {
   }
 
   const refresh = async () => {
-    if (activeController) activeController.abort()
-    activeController = new AbortController()
-
     setSnapshot({
       ...snapshot,
       status: 'loading',
@@ -256,30 +240,22 @@ const leaderboardStore = (() => {
     })
 
     try {
-      const url = `${API_BASE_URL}/api/leaderboard`
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-        signal: activeController.signal,
+      const usersRef = collection(firestore, 'users')
+      const q = query(usersRef, orderBy('average_wpm', 'desc'), limit(50))
+      const querySnapshot = await getDocs(q)
+      
+      const list = []
+      querySnapshot.forEach((doc) => {
+        list.push({ id: doc.id, ...doc.data() })
       })
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`)
-      }
-
-      const payload = await res.json()
-      const list = parseLeaderboardResponse(payload)
 
       setSnapshot({
         status: 'success',
-        data: Array.isArray(list) ? list : [],
+        data: list,
         errorMessage: '',
         lastUpdatedIso: new Date().toISOString(),
       })
     } catch (err) {
-      if (err?.name === 'AbortError') return
       setSnapshot({
         status: 'error',
         data: [],
