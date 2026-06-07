@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { languageOptions } from '../data/languages'
-import { getSnippetsByLanguage } from '../data/snippetBank'
 import { useMatchmaking } from '../hooks/useMatchmaking'
 import { useRooms } from '../hooks/useRooms'
 
@@ -33,11 +32,6 @@ function Home() {
   const selectedLanguageLabel =
     languageOptions.find((opt) => opt.value === selectedLanguage)?.label ??
     'Random'
-
-  const previewSnippets = useMemo(() => {
-    if (selectedLanguage === 'random') return []
-    return getSnippetsByLanguage(selectedLanguage)
-  }, [selectedLanguage])
 
   return (
     <section className="relative isolate overflow-hidden">
@@ -128,70 +122,7 @@ function Home() {
               </div>
             </section>
 
-            {/* Temporary snippet preview for verification */}
-            <section
-              aria-label="Snippet preview"
-              className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur sm:p-7"
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="font-mono text-base font-semibold tracking-wide text-slate-100">
-                    SNIPPET BANK PREVIEW
-                    <span className="ml-2 rounded-full border border-white/10 bg-slate-950/50 px-2 py-0.5 text-[10px] font-medium text-slate-300">
-                      DEV
-                    </span>
-                  </h2>
-                  <p className="mt-1.5 text-base text-slate-300">
-                    Temporary preview for verifying the bundled snippet bank.
-                  </p>
-                </div>
 
-                <div className="font-mono text-xs text-slate-400">
-                  ACTIVE: <span className="text-slate-100">{selectedLanguageLabel}</span>
-                </div>
-              </div>
-
-              {selectedLanguage === 'random' ? (
-                <div className="mt-5 rounded-xl border border-white/5 bg-slate-950/40 p-4 text-base text-slate-300">
-                  Random will choose from the available snippet bank during
-                  matchmaking.
-                </div>
-              ) : previewSnippets.length === 0 ? (
-                <div className="mt-5 rounded-xl border border-white/5 bg-slate-950/40 p-4 text-base text-slate-300">
-                  No preview snippets available for this language yet.
-                </div>
-              ) : (
-                <div className="mt-5">
-                  <div className="mb-3 text-xs text-slate-400">
-                    Showing <span className="text-slate-200">{previewSnippets.length}</span> snippets
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {previewSnippets.map((snippet) => (
-                      <article
-                        key={snippet.id}
-                        className="rounded-2xl border border-white/5 bg-slate-950/35 p-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                             <h3 className="text-sm font-semibold text-slate-100">
-                               {snippet.title}
-                             </h3>
-                             <div className="mt-1 font-mono text-[11px] text-slate-400">
-                               {snippet.id} • {snippet.language}
-                             </div>
-                           </div>
-                         </div>
- 
-                         <pre className="mt-3 max-h-56 overflow-auto rounded-xl border border-white/5 bg-slate-950/60 p-3.5 text-sm leading-relaxed text-slate-200">
-                           <code className="terminal-text">{snippet.code}</code>
-                         </pre>
-                       </article>
-                     ))}
-                   </div>
-                 </div>
-               )}
-             </section>
- 
              {/* Actions */}
              <section aria-label="Play options" className="grid gap-4 sm:gap-5">
                <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">

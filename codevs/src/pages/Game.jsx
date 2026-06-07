@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ref, onValue, update, onDisconnect, remove, runTransaction } from 'firebase/database'
-import { db } from '../firebase'
+import { db, firestore } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { languageOptions } from '../data/languages'
-import { getSnippetsByLanguage } from '../data/snippetBank'
+import { doc, getDoc } from 'firebase/firestore'
 
 const mockSnippet = `function calculateScore(hits, attempts) {
   const accuracy = hits / attempts;
@@ -324,7 +324,6 @@ function Game() {
 
       // Handle opponent disconnect (ragequit)
       if (playerUids.length < 2 && !data.winner) {
-        hasLeftRef.current = true
         // Opponent left, we win by default
         await update(roomRef, { winner: user.uid, reason: 'opponent_disconnected' })
         return
@@ -355,18 +354,41 @@ function Game() {
     return languageOptions.find((opt) => opt.value === languageValue)?.label || languageValue
   }, [languageValue])
 
-  const snippet = useMemo(() => {
-    if (!roomData?.snippetId) return mockSnippet
-    const list = getSnippetsByLanguage(languageValue)
-    const match = list.find(s => s.id === roomData.snippetId)
-    return match ? match.code : mockSnippet
-  }, [roomData?.snippetId, languageValue])
+  const [snippet, setSnippet] = useState(null)
+
+  useEffect(() => {
+    if (!roomData?.snippetId) return
+    let isMounted = true
+
+    const fetchSnippet = async () => {
+      try {
+        const snap = await getDoc(doc(firestore, 'snippets', roomData.snippetId))
+        if (!isMounted) return
+        
+        if (snap.exists()) {
+          setSnippet(snap.data().code)
+        } else {
+          setSnippet(mockSnippet)
+        }
+      } catch (err) {
+        console.error("Failed to load snippet:", err)
+        if (isMounted) setSnippet(mockSnippet)
+      }
+    }
+
+    fetchSnippet()
+    
+    return () => {
+      isMounted = false
+    }
+  }, [roomData?.snippetId])
 
   const [cursorIndex, setCursorIndex] = useState(0)
   const [charStates, setCharStates] = useState([])
   const [isFocused, setIsFocused] = useState(false)
   
   useEffect(() => {
+    if (!snippet) return
     setCharStates(Array.from({ length: snippet.length }, () => ''))
     setCursorIndex(0)
   }, [snippet])
@@ -405,8 +427,8 @@ function Game() {
     return formatPercent(acc)
   }, [correctKeystrokes, totalKeystrokes])
 
-  const currentProgressPercent = (cursorIndex / snippet.length) * 100
-  const opponentProgressPercent = (opponentProgressIndex / snippet.length) * 100
+  const currentProgressPercent = snippet ? (cursorIndex / snippet.length) * 100 : 0
+  const opponentProgressPercent = snippet ? (opponentProgressIndex / snippet.length) * 100 : 0
 
   // 2. Handle Game End & Save Stats
   useEffect(() => {
@@ -531,7 +553,16 @@ function Game() {
     navigate('/')
   }
 
-  if (!roomData) return null
+  if (!roomData || !snippet) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-950">
+        <div className="flex flex-col items-center gap-4 text-cyan-400">
+          <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-cyan-400"></div>
+          <div className="font-mono text-sm tracking-widest text-slate-400">DOWNLOADING CHALLENGE...</div>
+        </div>
+      </div>
+    )
+  }
 
   const currentPlayer = {
     username: user?.username || user?.email?.split('@')[0] || 'Player',

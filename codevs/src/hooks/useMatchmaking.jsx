@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ref, runTransaction, set, onValue, onDisconnect, serverTimestamp, remove, update } from 'firebase/database';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { getRandomSnippet } from '../data/snippetBank';
+import { getRandomSnippetId } from '../data/snippetBank';
 
 export function useMatchmaking() {
   const [isSearching, setIsSearching] = useState(false);
@@ -127,14 +127,14 @@ export function useMatchmaking() {
                    resolvedLanguage = langs[Math.floor(Math.random() * langs.length)];
                 }
                 
-                const randomSnippet = getRandomSnippet(resolvedLanguage);
+                const randomSnippetId = await getRandomSnippetId(resolvedLanguage);
 
                 // Create the room
                 await set(roomRef, {
                   creatorUID: user.uid,
                   language: matchLanguage,
                   resolvedLanguage: resolvedLanguage,
-                  snippetId: randomSnippet?.id || null,
+                  snippetId: randomSnippetId || null,
                   status: 'full',
                   matchType: 'quickmatch',
                   statEligible: matchLanguage === 'random',

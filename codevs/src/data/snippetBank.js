@@ -1,36 +1,27 @@
-import cSnippetsRaw from './snippets/c.json'
-import cppSnippetsRaw from './snippets/cpp.json'
-import javaSnippetsRaw from './snippets/java.json'
-import javascriptSnippetsRaw from './snippets/javascript.json'
-import phpSnippetsRaw from './snippets/php.json'
-import pythonSnippetsRaw from './snippets/python.json'
+import { doc, getDoc } from 'firebase/firestore'
+import { firestore } from '../firebase'
 
-function withLanguage(language, snippets) {
-  return (snippets ?? []).map((s) => ({
-    ...s,
-    language: s.language ?? language,
-  }))
+/**
+ * Fetches the snippet_metadata for a given language from Firestore,
+ * and randomly selects one snippet ID.
+ */
+export const getRandomSnippetId = async (language) => {
+  try {
+    const metaRef = doc(firestore, 'snippet_metadata', language)
+    const metaSnap = await getDoc(metaRef)
+    
+    if (metaSnap.exists()) {
+      const { ids } = metaSnap.data()
+      if (ids && ids.length > 0) {
+        const randomIndex = Math.floor(Math.random() * ids.length)
+        return ids[randomIndex]
+      }
+    }
+    
+    console.warn(`No snippet IDs found in metadata for language: ${language}`)
+    return 'fallback-snippet-id'
+  } catch (error) {
+    console.error(`Error fetching snippet metadata for ${language}:`, error)
+    return 'fallback-snippet-id'
+  }
 }
-
-export const snippetBank = {
-  c: withLanguage('c', cSnippetsRaw),
-  cpp: withLanguage('cpp', cppSnippetsRaw),
-  java: withLanguage('java', javaSnippetsRaw),
-  javascript: withLanguage('javascript', javascriptSnippetsRaw),
-  php: withLanguage('php', phpSnippetsRaw),
-  python: withLanguage('python', pythonSnippetsRaw),
-}
-
-export function getSnippetsByLanguage(language) {
-  return snippetBank[language] ?? []
-}
-
-export function getRandomSnippet(language) {
-  const snippets = getSnippetsByLanguage(language)
-  if (!snippets.length) return null
-  return snippets[Math.floor(Math.random() * snippets.length)]
-}
-
-// TODO(matchmaking): after matchmaking/room creation resolves the final language,
-// call `getRandomSnippet(resolvedLanguage)` and store the returned snippet `id`
-// in Firebase RTDB as part of the match/room record.

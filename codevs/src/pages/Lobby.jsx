@@ -4,7 +4,7 @@ import { ref, onValue, set, update, onDisconnect, remove, serverTimestamp } from
 import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { languageOptions } from '../data/languages'
-import { getRandomSnippet } from '../data/snippetBank'
+import { getRandomSnippetId } from '../data/snippetBank'
 
 function StatusBadge({ ready }) {
   const label = ready ? 'Ready' : 'Not Ready'
@@ -202,6 +202,7 @@ function Lobby() {
   const [countdown, setCountdown] = useState(null)
   const [isStarting, setIsStarting] = useState(false)
   const hasLeftRef = useRef(false)
+  const isFetchingSnippetRef = useRef(false)
 
   // 1. Sync room data
   useEffect(() => {
@@ -292,7 +293,7 @@ function Lobby() {
       username: user.username || user?.email?.split('@')[0] || 'Player',
       label: 'Player 1',
       isCurrentUser: true,
-      ready: roomData.players[user.uid]?.ready || false
+      ready: roomData.players?.[user.uid]?.ready || false
     })
 
     // Add Opponent
@@ -302,7 +303,7 @@ function Lobby() {
         username: opponentProfile.username || 'Opponent',
         label: 'Player 2',
         isCurrentUser: false,
-        ready: roomData.players[opponentProfile.uid]?.ready || false
+        ready: roomData.players?.[opponentProfile.uid]?.ready || false
       })
     } else {
       playerArray.push(null) // Represents waiting for opponent
@@ -337,7 +338,7 @@ function Lobby() {
 
   const handleToggleReady = async () => {
     if (locked) return
-    const currentState = roomData.players[user.uid]?.ready || false
+    const currentState = roomData.players?.[user.uid]?.ready || false
     await update(ref(db, `rooms/${roomId}/players/${user.uid}`), { ready: !currentState })
   }
 
@@ -345,12 +346,22 @@ function Lobby() {
   useEffect(() => {
     if (bothReady && countdown === null && !isStarting) {
       if (roomData?.creatorUID === user.uid && !roomData.countdownStart) {
-         const lang = roomData.resolvedLanguage || roomData.language || 'javascript'
-         const randomSnippet = getRandomSnippet(lang)
-         update(ref(db, `rooms/${roomId}`), { 
-            countdownStart: serverTimestamp(),
-            snippetId: randomSnippet?.id || null
-         })
+         if (isFetchingSnippetRef.current) return
+         isFetchingSnippetRef.current = true
+
+         const assignSnippetAndStart = async () => {
+            try {
+               const lang = roomData.resolvedLanguage || roomData.language || 'javascript'
+               const randomSnippetId = await getRandomSnippetId(lang)
+               await update(ref(db, `rooms/${roomId}`), { 
+                  countdownStart: serverTimestamp(),
+                  snippetId: randomSnippetId || null
+               })
+            } finally {
+               isFetchingSnippetRef.current = false
+            }
+         }
+         assignSnippetAndStart()
       }
       setCountdown(3)
     } else if (!bothReady && countdown !== null && !isStarting) {
