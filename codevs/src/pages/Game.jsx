@@ -338,11 +338,7 @@ function Game() {
         })
       }
 
-      // Transition to result screen if there is a winner
-      if (data.winner) {
-         hasLeftRef.current = true
-         navigate(`/result?roomId=${roomId}`)
-      }
+      // The winner transition is handled by a separate useEffect so it can access the latest typing stats!
     })
 
     return () => {
@@ -401,6 +397,27 @@ function Game() {
 
   const currentProgressPercent = (cursorIndex / snippet.length) * 100
   const opponentProgressPercent = (opponentProgressIndex / snippet.length) * 100
+
+  // 2. Handle Game End & Save Stats
+  useEffect(() => {
+    if (roomData?.winner && !hasLeftRef.current) {
+      hasLeftRef.current = true
+
+      const minutes = elapsedSeconds / 60
+      const wpm = minutes > 0 ? Math.round((correctChars / 5) / minutes) : 0
+      const acc = totalKeystrokes > 0 ? Math.round((correctKeystrokes / totalKeystrokes) * 1000) / 10 : 0
+
+      // Write final stats to RTDB
+      update(ref(db, `rooms/${roomId}/players/${user.uid}`), {
+        stats: { wpm, accuracy: acc }
+      }).then(() => {
+        navigate(`/result?roomId=${roomId}`)
+      }).catch((err) => {
+        console.error("Failed to save final stats:", err)
+        navigate(`/result?roomId=${roomId}`)
+      })
+    }
+  }, [roomData?.winner, roomId, user.uid, elapsedSeconds, correctChars, totalKeystrokes, navigate])
 
   const handleFocusTyping = () => {
     typingRef.current?.focus()
