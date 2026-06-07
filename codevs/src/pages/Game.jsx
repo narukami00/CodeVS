@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ref, onValue, update, onDisconnect, remove } from 'firebase/database'
+import { ref, onValue, update, onDisconnect, remove, runTransaction } from 'firebase/database'
 import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { languageOptions } from '../data/languages'
@@ -502,8 +502,13 @@ function Game() {
       update(ref(db, `rooms/${roomId}/players/${user.uid}`), { progress: nextIndex })
 
       if (nextIndex >= snippet.length) {
-        // We won! Write to database and let the onValue hook route us to Result
-        update(ref(db, `rooms/${roomId}`), { winner: user.uid })
+        // We won! Write to database using a transaction to prevent simultaneous victories
+        runTransaction(ref(db, `rooms/${roomId}`), (currentData) => {
+           if (currentData === null) return currentData;
+           if (currentData.winner) return; // Abort if opponent beat us to it!
+           currentData.winner = user.uid;
+           return currentData;
+        })
       }
       return
     }

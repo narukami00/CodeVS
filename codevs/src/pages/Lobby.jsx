@@ -368,7 +368,9 @@ function Lobby() {
     if (countdown === 0) {
       const startTimer = window.setTimeout(() => {
         setCountdown(null)
-        handleStartGame()
+        if (!hasLeftRef.current) {
+          handleStartGame()
+        }
       }, 700)
 
       return () => window.clearTimeout(startTimer)
@@ -380,6 +382,21 @@ function Lobby() {
 
     return () => window.clearTimeout(tickTimer)
   }, [countdown, handleStartGame, isStarting])
+
+  // Ghost Lobby Timeout for Quick Matches
+  useEffect(() => {
+    if (roomData?.matchType === 'quickmatch' && !opponentProfile && !isStarting) {
+      const timer = window.setTimeout(async () => {
+        if (!hasLeftRef.current) {
+           hasLeftRef.current = true
+           await remove(ref(db, `rooms/${roomId}`))
+           alert("Opponent failed to connect. Returning to home.")
+           navigate('/')
+        }
+      }, 15000)
+      return () => window.clearTimeout(timer)
+    }
+  }, [roomData?.matchType, opponentProfile, isStarting, roomId, navigate])
 
   if (!roomData) return null
 
