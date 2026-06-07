@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ref, get } from 'firebase/database'
+import { ref, get, onValue, update } from 'firebase/database'
 import { doc, runTransaction } from 'firebase/firestore'
 import { db, firestore } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
@@ -107,8 +107,11 @@ function Result() {
   const [roomData, setRoomData] = useState(null)
   const [opponentProfile, setOpponentProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [rematchRequested, setRematchRequested] = useState(false)
+  const [opponentRematchRequested, setOpponentRematchRequested] = useState(false)
   
   const leaderboardUpdatedRef = useRef(false)
+  const hasLoadedWinnerRef = useRef(false)
 
   useEffect(() => {
     if (!user || !roomId) {
@@ -116,72 +119,99 @@ function Result() {
       return
     }
 
-    const fetchResultData = async () => {
-      try {
-        const roomRef = ref(db, `rooms/${roomId}`)
-        const snap = await get(roomRef)
-        
-        if (!snap.exists()) {
-          navigate('/')
-          return
-        }
-
-        const data = snap.val()
-        setRoomData(data)
-
-        const playerUids = Object.keys(data.players || {})
-        const oppUid = playerUids.find(uid => uid !== user.uid)
-        
-        if (oppUid) {
-           // Provide fallback UI for opponent. In a fully polished app, we'd fetch their username from Firestore here.
-           setOpponentProfile({
-             uid: oppUid,
-             username: 'Opponent',
-             avatarText: 'O'
-           })
-        }
-        
-        setLoading(false)
-
-        // LEADERBOARD STORAGE PIPELINE
-        // Ensure this only runs once per match, and only for qualifying quick matches.
-        if (data.matchType === 'quickmatch' && !leaderboardUpdatedRef.current && data.winner) {
-           leaderboardUpdatedRef.current = true;
-           
-           const myStats = data.players[user.uid]?.stats
-           if (myStats && myStats.wpm > 0) { // Only count if they actually typed something
-               const userDocRef = doc(firestore, 'users', user.uid)
-               try {
-                  await runTransaction(firestore, async (transaction) => {
-                     const userDoc = await transaction.get(userDocRef)
-                     if (!userDoc.exists()) return
-                     
-                     const userData = userDoc.data()
-                     const oldAvgWpm = userData.average_wpm || 0
-                     const oldGames = userData.quick_match_count || 0
-                     
-                     const newGames = oldGames + 1
-                     // Recalculate average WPM
-                     const newAvgWpm = ((oldAvgWpm * oldGames) + myStats.wpm) / newGames
-                     
-                     transaction.update(userDocRef, {
-                         quick_match_count: newGames,
-                         average_wpm: newAvgWpm
-                     })
-                  })
-                  console.log("Leaderboard updated securely.")
-               } catch (err) {
-                  console.error("Leaderboard transaction failed:", err)
-               }
-           }
-        }
-      } catch (err) {
-        console.error("Failed to fetch match results:", err)
+    const roomRef = ref(db, `rooms/${roomId}`)
+    const unsubscribe = onValue(roomRef, async (snap) => {
+      if (!snap.exists()) {
         navigate('/')
+        return
       }
-    }
 
-    fetchResultData()
+      const data = snap.val()
+      
+      // DETECT ROOM RESET (Rematch Triggered)
+      // If we previously loaded a winner, but now data.winner is gone, 
+      // it means the room was successfully wiped for a rematch!
+      if (hasLoadedWinnerRef.current && !data.winner) {
+        navigate(`/lobby?roomId=${roomId}`)
+        return
+      }
+
+      setRoomData(data)
+
+      const playerUids = Object.keys(data.players || {})
+      const oppUid = playerUids.find(uid => uid !== user.uid)
+      
+      if (oppUid) {
+         setOpponentProfile({
+           uid: oppUid,
+           username: 'Opponent',
+           avatarText: 'O'
+         })
+      }
+      
+      // Handle Rematch Requests State
+      const requests = data.rematchRequests || {}
+      setRematchRequested(!!requests[user.uid])
+      if (oppUid) setOpponentRematchRequested(!!requests[oppUid])
+
+      // Execute Room Wipe if BOTH requested
+      const reqUids = Object.keys(requests)
+      if (reqUids.length >= 2 && data.creatorUID === user.uid) {
+         const updates = {}
+         updates[`rooms/${roomId}/winner`] = null
+         updates[`rooms/${roomId}/reason`] = null
+         updates[`rooms/${roomId}/countdownStart`] = null
+         updates[`rooms/${roomId}/snippetId`] = null
+         updates[`rooms/${roomId}/rematchRequests`] = null
+         
+         Object.keys(data.players || {}).forEach(uid => {
+             updates[`rooms/${roomId}/players/${uid}/ready`] = false
+             updates[`rooms/${roomId}/players/${uid}/progress`] = 0
+             updates[`rooms/${roomId}/players/${uid}/stats`] = null
+         })
+         
+         await update(ref(db), updates)
+         // The onValue hook will fire again, see !data.winner, and navigate everyone!
+      }
+
+      if (data.winner) {
+         hasLoadedWinnerRef.current = true
+      }
+      
+      setLoading(false)
+
+      // LEADERBOARD STORAGE PIPELINE
+      if (data.matchType === 'quickmatch' && !leaderboardUpdatedRef.current && data.winner) {
+         leaderboardUpdatedRef.current = true;
+         
+         const myStats = data.players[user.uid]?.stats
+         if (myStats && myStats.wpm > 0) {
+             const userDocRef = doc(firestore, 'users', user.uid)
+             try {
+                await runTransaction(firestore, async (transaction) => {
+                   const userDoc = await transaction.get(userDocRef)
+                   if (!userDoc.exists()) return
+                   
+                   const userData = userDoc.data()
+                   const oldAvgWpm = userData.average_wpm || 0
+                   const oldGames = userData.quick_match_count || 0
+                   
+                   const newGames = oldGames + 1
+                   const newAvgWpm = ((oldAvgWpm * oldGames) + myStats.wpm) / newGames
+                   
+                   transaction.update(userDocRef, {
+                       quick_match_count: newGames,
+                       average_wpm: newAvgWpm
+                   })
+                })
+             } catch (err) {
+                console.error("Leaderboard transaction failed:", err)
+             }
+         }
+      }
+    })
+
+    return () => unsubscribe()
   }, [user, roomId, navigate])
 
   const languageLabel = useMemo(() => {
@@ -238,9 +268,11 @@ function Result() {
     ? 'text-emerald-300'
     : 'text-rose-300'
 
-  const handleRematch = () => {
-    // Navigate back to lobby to wait for opponent to join again
-    navigate(`/lobby?roomId=${roomId}`)
+  const handleRematch = async () => {
+    if (rematchRequested) return
+    const updates = {}
+    updates[`rooms/${roomId}/rematchRequests/${user.uid}`] = true
+    await update(ref(db), updates)
   }
 
   return (
@@ -343,9 +375,19 @@ function Result() {
                     <button
                       type="button"
                       onClick={handleRematch}
-                      className="cyber-button cyber-button-secondary w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
+                      disabled={rematchRequested}
+                      className={[
+                        "cyber-button w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 sm:w-auto transition-all",
+                        rematchRequested 
+                           ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10 cursor-not-allowed"
+                           : opponentRematchRequested
+                             ? "border-amber-400/50 text-amber-300 bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.3)] motion-safe:animate-pulse focus-visible:ring-amber-400/70"
+                             : "cyber-button-secondary focus-visible:ring-cyan-400/70"
+                      ].join(" ")}
                     >
-                      Request Rematch
+                      {rematchRequested 
+                        ? (opponentRematchRequested ? "Resetting Room..." : "Waiting for opponent...") 
+                        : (opponentRematchRequested ? "Accept Rematch" : "Request Rematch")}
                     </button>
                   ) : null}
                 </div>

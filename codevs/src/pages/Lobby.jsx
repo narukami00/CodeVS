@@ -4,6 +4,7 @@ import { ref, onValue, set, update, onDisconnect, remove, serverTimestamp } from
 import { db } from '../firebase'
 import { useAuth } from '../contexts/AuthContext'
 import { languageOptions } from '../data/languages'
+import { getRandomSnippet } from '../data/snippetBank'
 
 function StatusBadge({ ready }) {
   const label = ready ? 'Ready' : 'Not Ready'
@@ -344,7 +345,12 @@ function Lobby() {
   useEffect(() => {
     if (bothReady && countdown === null && !isStarting) {
       if (roomData?.creatorUID === user.uid && !roomData.countdownStart) {
-         update(ref(db, `rooms/${roomId}`), { countdownStart: serverTimestamp() })
+         const lang = roomData.resolvedLanguage || roomData.language || 'javascript'
+         const randomSnippet = getRandomSnippet(lang)
+         update(ref(db, `rooms/${roomId}`), { 
+            countdownStart: serverTimestamp(),
+            snippetId: randomSnippet?.id || null
+         })
       }
       setCountdown(3)
     } else if (!bothReady && countdown !== null && !isStarting) {
