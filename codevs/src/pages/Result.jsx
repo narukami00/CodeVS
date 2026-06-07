@@ -156,7 +156,7 @@ function Result() {
 
       // Execute Room Wipe if BOTH requested
       const reqUids = Object.keys(requests)
-      if (reqUids.length >= 2 && data.creatorUID === user.uid) {
+      if (reqUids.length >= 2) {
          const updates = {}
          updates[`rooms/${roomId}/winner`] = null
          updates[`rooms/${roomId}/reason`] = null
