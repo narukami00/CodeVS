@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
@@ -7,8 +7,11 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
-  const navigate = useNavigate()
+  const { login, user } = useAuth()
+
+  if (user) {
+    return <Navigate to="/" replace />
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -17,11 +20,10 @@ export default function Login() {
       setError('')
       setLoading(true)
       await login(email, password)
-      navigate('/')
+      // Navigation is handled declaratively via <Navigate> once user state updates
     } catch (err) {
       console.error(err)
       setError('Failed to log in. Please check your credentials.')
-    } finally {
       setLoading(false)
     }
   }
