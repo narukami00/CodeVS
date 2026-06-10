@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react'
 import { languageOptions } from '../data/languages'
 import { useMatchmaking } from '../hooks/useMatchmaking'
 import { useRooms } from '../hooks/useRooms'
+import { useAuth } from '../contexts/AuthContext'
 
 function Home() {
+  const { user } = useAuth()
   const [selectedLanguage, setSelectedLanguage] = useState('random')
   const { startQuickMatch, cancelSearch, isSearching } = useMatchmaking()
   const { createRoom, joinRoom, isProcessing, roomError, clearRoomError } = useRooms()
@@ -55,7 +57,7 @@ function Home() {
             </div>
 
             <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight text-slate-100 sm:text-6xl">
-              Enter the arena
+              Welcome, <span className="text-cyan-300">{user?.username || 'Operative'}</span>
               <span className="cyber-cursor ml-2 align-middle" aria-hidden="true">
                 _
               </span>

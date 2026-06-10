@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Register() {
@@ -9,8 +9,11 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { register } = useAuth()
-  const navigate = useNavigate()
+  const { register, user } = useAuth()
+
+  if (user) {
+    return <Navigate to="/" replace />
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -23,11 +26,10 @@ export default function Register() {
       setError('')
       setLoading(true)
       await register(email, password, username)
-      navigate('/')
+      // Navigation is handled declaratively via <Navigate> once user state updates
     } catch (err) {
       console.error(err)
       setError(err.message || 'Failed to create an account')
-    } finally {
       setLoading(false)
     }
   }
