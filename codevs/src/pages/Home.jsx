@@ -4,6 +4,8 @@ import { useMatchmaking } from '../hooks/useMatchmaking'
 import { useRooms } from '../hooks/useRooms'
 import { useAuth } from '../contexts/AuthContext'
 
+
+
 function Home() {
   const { user } = useAuth()
   const [selectedLanguage, setSelectedLanguage] = useState('random')
@@ -36,58 +38,49 @@ function Home() {
     'Random'
 
   return (
-    <section className="relative isolate overflow-hidden">
-      {/* Background overlays (grid + scanlines) */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 text-cyan-400/20"
-      >
-        <div className="cyber-grid absolute inset-0" />
-        <div className="cyber-scanlines absolute inset-0" />
-        <div className="cyber-vignette absolute inset-0" />
+    <section className="relative isolate">
+      {/* Background overlays (mesh + grid + vignette) */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="bg-mesh absolute inset-0" />
+        <div className="bg-grid absolute inset-0" />
+        <div className="bg-vignette absolute inset-0" />
       </div>
 
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center px-4 py-12 sm:py-14">
-        <div className="cyber-entrance w-full">
-          <header className="mx-auto max-w-3xl text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/40 px-4 py-1.5 text-sm text-slate-200 backdrop-blur">
-              <span className="font-mono text-emerald-300/90">CONNECTED</span>
-              <span className="h-1 w-1 rounded-full bg-emerald-300/90" />
-              <span className="text-slate-300">Play Hub</span>
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center px-4 py-8 sm:py-12 relative z-10">
+        <div className="animate-entrance w-full">
+          <header className="mx-auto max-w-3xl text-center mb-8">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-950/20 px-3.5 py-1.5 text-xs text-indigo-300 backdrop-blur font-medium">
+              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
+              <span>Status: Authenticated</span>
             </div>
 
-            <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight text-slate-100 sm:text-6xl">
-              Welcome, <span className="text-cyan-300">{user?.username || 'Operative'}</span>
-              <span className="cyber-cursor ml-2 align-middle" aria-hidden="true">
-                _
-              </span>
+            <h1 className="mt-4 text-balance text-4xl font-bold tracking-tight text-slate-100 sm:text-5xl">
+              Welcome, <span className="bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">{user?.username || 'Developer'}</span>
             </h1>
-            <p className="mt-4 text-pretty text-base text-slate-300 sm:text-lg">
-              Pick a language, then choose how you want to compete.
+            <p className="mt-3 text-pretty text-sm text-slate-400 max-w-lg mx-auto">
+              Select your programming language and choose a game mode to start a typing challenge.
             </p>
           </header>
 
-          <div className="mx-auto mt-10 grid w-full max-w-5xl gap-7">
+          <div className="mx-auto mt-8 grid w-full max-w-5xl gap-6">
             {/* Language picker */}
             <section
               aria-label="Language selection"
-              className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur sm:p-7"
+              className="glass-card p-5 sm:p-6 mb-6"
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="font-mono text-base font-semibold tracking-wide text-slate-100">
-                    LANGUAGE SELECT
+                  <h2 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                    Select Language
                   </h2>
-                  <p className="mt-1.5 text-base text-slate-300">
-                    Used for <span className="text-slate-100">Quick Match</span>{' '}
-                    and <span className="text-slate-100">Create Room</span>. Join
-                    Room uses the host’s language.
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    Choose a language for your typing challenge.
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3.5">
-                  <div className="text-xs text-slate-400">Selected</div>
-                  <div className="font-mono text-base text-cyan-300">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-1.5 border-l-2 border-l-indigo-500 min-w-[120px]">
+                  <div className="text-[10px] text-slate-500 font-medium">Selected</div>
+                  <div className="text-sm font-bold text-indigo-400">
                     {selectedLanguageLabel}
                   </div>
                 </div>
@@ -96,7 +89,7 @@ function Home() {
               <div
                 role="group"
                 aria-label="Available languages"
-                className="mt-5 flex flex-wrap gap-2.5"
+                className="mt-4 flex flex-wrap gap-2"
               >
                 {languageOptions.map((opt) => {
                   const isActive = opt.value === selectedLanguage
@@ -108,12 +101,11 @@ function Home() {
                       onClick={() => setSelectedLanguage(opt.value)}
                       className={
                         [
-                          'rounded-full border px-4 py-2.5 text-base transition',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70',
+                          'rounded-full border px-4 py-1.5 text-xs font-medium transition duration-200 cursor-pointer',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50',
                           isActive
-                            ? 'border-cyan-300/70 bg-cyan-400 text-slate-950 ring-1 ring-cyan-300/60'
-                            : 'border-slate-800 bg-slate-950/30 text-slate-200 hover:border-cyan-400/40 hover:bg-slate-950/60',
-                          'font-mono',
+                            ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
+                            : 'border-slate-850 bg-slate-900/10 text-slate-400 hover:border-slate-700 hover:text-slate-200 hover:bg-slate-900/40',
                         ].join(' ')
                       }
                     >
@@ -124,124 +116,149 @@ function Home() {
               </div>
             </section>
 
+            {/* Game Modes */}
+            <div className="grid gap-6">
+              {/* Modes Selection */}
+              <section aria-label="Play options" className="grid gap-4 lg:grid-cols-3">
+                <button
+                  type="button"
+                  disabled={isSearching || isProcessing}
+                  onClick={() => handleQuickMatch(selectedLanguage)}
+                  className="glass-card group p-5 text-left hover:border-indigo-500/40 disabled:opacity-50 disabled:hover:translate-y-0 cursor-pointer w-full"
+                  aria-label="Quick Match"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:scale-105 transition-transform duration-300">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-100 group-hover:text-indigo-400 transition-colors">
+                          Quick Match
+                        </h3>
+                        <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">
+                          Auto-match with an active opponent in the global queue.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-indigo-400/80 group-hover:translate-x-1 transition-transform">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </div>
 
-             {/* Actions */}
-             <section aria-label="Play options" className="grid gap-4 sm:gap-5">
-               <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
-                 <button
-                   type="button"
-                   disabled={isSearching || isProcessing}
-                   onClick={() => handleQuickMatch(selectedLanguage)}
-                   className="group rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-left backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 hover:-translate-y-0.5 hover:border-cyan-400/40 hover:bg-slate-950/60 hover:ring-1 hover:ring-cyan-400/30 active:translate-y-0 sm:p-7 disabled:opacity-50 disabled:hover:translate-y-0"
-                   aria-label="Quick Match"
-                 >
-                   <div className="flex items-start justify-between gap-3">
-                     <div>
-                       <div className="font-mono text-xs tracking-widest text-slate-400">
-                         MODE
-                       </div>
-                       <h3 className="mt-1 text-xl font-semibold text-slate-100">
-                         Quick Match
-                       </h3>
-                     </div>
-                     <span className="cyber-icon font-mono text-cyan-300">↳</span>
-                   </div>
-                   <p className="mt-3.5 text-base text-slate-300">
-                     Find an opponent instantly and race to type.
-                   </p>
- 
-                   <div className="mt-5 flex items-center justify-between">
-                     <span className="font-mono text-xs text-slate-400">
-                       LANGUAGE: <span className="text-slate-200">{selectedLanguageLabel}</span>
-                     </span>
-                     <span className="rounded-full border border-cyan-400/30 bg-slate-950/50 px-3 py-1.5 text-sm text-cyan-300">
-                       MATCH
-                     </span>
-                   </div>
-                 </button>
- 
-                 <button
-                   type="button"
-                   disabled={isSearching || isProcessing}
-                   onClick={() => handleCreateRoom(selectedLanguage)}
-                   className="group rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-left backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 hover:-translate-y-0.5 hover:border-emerald-400/40 hover:bg-slate-950/60 hover:ring-1 hover:ring-emerald-400/30 active:translate-y-0 sm:p-7 disabled:opacity-50 disabled:hover:translate-y-0"
-                   aria-label="Create Room"
-                 >
-                   <div className="flex items-start justify-between gap-3">
-                     <div>
-                       <div className="font-mono text-xs tracking-widest text-slate-400">
-                         ROOM
-                       </div>
-                       <h3 className="mt-1 text-xl font-semibold text-slate-100">
-                         Create Room
-                       </h3>
-                     </div>
-                     <span className="cyber-icon font-mono text-emerald-300">+</span>
-                   </div>
-                   <p className="mt-3.5 text-base text-slate-300">
-                     Host a private duel and share a room code.
-                   </p>
- 
-                   <div className="mt-5 flex items-center justify-between">
-                     <span className="font-mono text-xs text-slate-400">
-                       LANGUAGE: <span className="text-slate-200">{selectedLanguageLabel}</span>
-                     </span>
-                     <span className="rounded-full border border-emerald-400/30 bg-slate-950/50 px-3 py-1.5 text-sm text-emerald-300">
-                       HOST
-                     </span>
-                   </div>
-                 </button>
- 
-                 <button
-                   type="button"
-                   disabled={isSearching || isProcessing}
-                   onClick={handleJoinRoom}
-                   className="group rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-left backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/70 hover:-translate-y-0.5 hover:border-fuchsia-400/40 hover:bg-slate-950/60 hover:ring-1 hover:ring-fuchsia-400/30 active:translate-y-0 sm:p-7 disabled:opacity-50 disabled:hover:translate-y-0"
-                   aria-label="Join Room"
-                 >
-                   <div className="flex items-start justify-between gap-3">
-                     <div>
-                       <div className="font-mono text-xs tracking-widest text-slate-400">
-                         ROOM
-                       </div>
-                       <h3 className="mt-1 text-xl font-semibold text-slate-100">
-                         Join Room
-                       </h3>
-                     </div>
-                     <span className="cyber-icon font-mono text-fuchsia-300">
-                       #
-                     </span>
-                   </div>
-                   <p className="mt-3.5 text-base text-slate-300">
-                     Enter a room code and sync to the host’s language.
-                   </p>
- 
-                   <div className="mt-5 flex items-center justify-between">
-                     <span className="font-mono text-xs text-slate-400">
-                       LANGUAGE: <span className="text-slate-200">HOST</span>
-                     </span>
-                     <span className="rounded-full border border-fuchsia-400/30 bg-slate-950/50 px-3 py-1.5 text-sm text-fuchsia-300">
-                       JOIN
-                     </span>
-                   </div>
-                 </button>
-               </div>
-             </section>
-           </div>
-         </div>
-       </div>
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-900 pt-3">
+                    <span className="text-[11px] text-slate-500">
+                      Language: <span className="text-slate-300 font-semibold">{selectedLanguageLabel}</span>
+                    </span>
+                    <span className="rounded-lg border border-indigo-500/20 bg-indigo-950/20 px-2.5 py-1 text-[11px] font-medium text-indigo-300">
+                      Find Opponent
+                    </span>
+                  </div>
+                </button>
 
-       {isSearching && (
+                <button
+                  type="button"
+                  disabled={isSearching || isProcessing}
+                  onClick={() => handleCreateRoom(selectedLanguage)}
+                  className="glass-card group p-5 text-left hover:border-emerald-500/40 disabled:opacity-50 disabled:hover:translate-y-0 cursor-pointer w-full"
+                  aria-label="Create Room"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-105 transition-transform duration-300">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-100 group-hover:text-emerald-400 transition-colors">
+                          Create Custom Room
+                        </h3>
+                        <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">
+                          Host a private coding room and invite friends using a join code.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-emerald-400/80 group-hover:translate-x-1 transition-transform">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-900 pt-3">
+                    <span className="text-[11px] text-slate-500">
+                      Language: <span className="text-slate-300 font-semibold">{selectedLanguageLabel}</span>
+                    </span>
+                    <span className="rounded-lg border border-emerald-500/20 bg-emerald-950/20 px-2.5 py-1 text-[11px] font-medium text-emerald-300">
+                      Host Room
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSearching || isProcessing}
+                  onClick={handleJoinRoom}
+                  className="glass-card group p-5 text-left hover:border-sky-500/40 disabled:opacity-50 disabled:hover:translate-y-0 cursor-pointer w-full"
+                  aria-label="Join Room"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 group-hover:scale-105 transition-transform duration-300">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 7a2 2 0 012 2m-5 0a2 2 0 012 2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2M9 9a2 2 0 00-2 2v8a2 2 0 002 2h2a2 2 0 002-2v-8a2 2 0 00-2-2H9z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-100 group-hover:text-sky-400 transition-colors">
+                          Join via Room Code
+                        </h3>
+                        <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">
+                          Enter a 6-digit room code shared by a friend.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-sky-400/80 group-hover:translate-x-1 transition-transform">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-900 pt-3">
+                    <span className="text-[11px] text-slate-500">
+                      Mode: <span className="text-slate-300 font-semibold">Private Room</span>
+                    </span>
+                    <span className="rounded-lg border border-sky-500/20 bg-sky-950/20 px-2.5 py-1 text-[11px] font-medium text-sky-300">
+                      Enter Code
+                    </span>
+                  </div>
+                </button>
+              </section>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isSearching && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-          <div className="cyber-panel flex flex-col items-center justify-center p-8 text-center max-w-sm w-full mx-4">
-            <div className="mb-6 h-12 w-12 animate-spin rounded-full border-b-2 border-cyan-400"></div>
-            <h2 className="mb-2 text-2xl font-bold text-white">Searching...</h2>
-            <p className="mb-6 text-sm text-slate-400">Looking for an opponent in the <span className="text-cyan-300 font-mono">{selectedLanguageLabel}</span> queue.</p>
+          <div className="dialog-panel flex flex-col items-center justify-center p-8 text-center max-w-sm w-full mx-4 border-slate-800/85">
+            <div className="mb-6 h-12 w-12 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></div>
+            <h2 className="mb-2 text-lg font-bold text-white tracking-wide">Searching for Match...</h2>
+            <p className="mb-6 text-xs text-slate-400">
+              Finding an active opponent for <span className="text-indigo-400 font-semibold">{selectedLanguageLabel}</span>...
+            </p>
             <button
               onClick={cancelSearch}
-              className="cyber-button cyber-button-secondary w-full"
+              className="btn btn-secondary w-full text-xs font-semibold cursor-pointer"
             >
-              ABORT SEARCH
+              Cancel Search
             </button>
           </div>
         </div>
@@ -249,25 +266,25 @@ function Home() {
 
       {showJoinModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm px-4">
-          <div className="cyber-panel max-w-sm w-full p-8 relative">
+          <div className="dialog-panel max-w-sm w-full p-8 relative border-slate-850">
             <button
               onClick={() => setShowJoinModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer text-base"
             >
               ✕
             </button>
-            <h2 className="mb-6 text-2xl font-bold text-white">Join Room</h2>
+            <h2 className="mb-6 text-xl font-bold text-white tracking-tight">Join Private Room</h2>
             
             {roomError && (
-              <div className="mb-4 rounded border border-red-500/50 bg-red-500/10 p-3 text-sm text-red-400">
-                {roomError}
+              <div className="mb-4 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3.5 text-xs text-rose-400 font-semibold font-mono">
+                Error: {roomError}
               </div>
             )}
 
             <form onSubmit={submitJoinRoom}>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium text-slate-300">
-                  Enter 6-Digit Room Code
+              <div className="mb-5">
+                <label className="mb-2 block text-xs font-semibold text-slate-400">
+                  Room Code
                 </label>
                 <input
                   type="text"
@@ -275,23 +292,23 @@ function Home() {
                   maxLength={6}
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  className="cyber-input font-mono text-center tracking-widest text-lg uppercase"
-                  placeholder="A3X9KP"
+                  className="form-input font-mono text-center tracking-widest text-lg uppercase focus:border-indigo-500 focus:shadow-md"
+                  placeholder="X9KP42"
                 />
               </div>
               <button
                 disabled={isProcessing || joinCode.length !== 6}
                 type="submit"
-                className="cyber-button cyber-button-primary w-full justify-center disabled:opacity-50"
+                className="btn btn-primary w-full justify-center disabled:opacity-50 text-xs font-semibold cursor-pointer"
               >
-                {isProcessing ? 'JOINING...' : 'JOIN ARENA'}
+                {isProcessing ? 'Joining...' : 'Join Room'}
               </button>
             </form>
           </div>
         </div>
       )}
-     </section>
-   )
- }
- 
- export default Home
+    </section>
+  )
+}
+
+export default Home

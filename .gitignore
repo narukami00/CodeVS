@@ -24,3 +24,5 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+codevs/.firebaserc
+codevs/.firebase/hosting.ZGlzdA.cache
