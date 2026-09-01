@@ -14,45 +14,39 @@ function formatPercent(value) {
 function StatRow({ label, value, tone = 'neutral' }) {
   const toneClass =
     tone === 'good'
-      ? 'text-emerald-200'
+      ? 'text-emerald-400 font-bold'
       : tone === 'bad'
-        ? 'text-rose-200'
-        : 'text-slate-200'
+        ? 'text-rose-400 font-bold'
+        : 'text-slate-300'
 
   return (
-    <div className="flex items-baseline justify-between gap-4 rounded-xl border border-white/5 bg-slate-950/35 px-4 py-3">
-      <div className="font-mono text-xs tracking-widest text-slate-400">
+    <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-2.5">
+      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
         {label}
       </div>
-      <div className={['font-mono text-base', toneClass].join(' ')}>{value}</div>
+      <div className={['font-mono text-xs font-semibold', toneClass].join(' ')}>{value}</div>
     </div>
   )
 }
 
 function PlayerResultCard({ player, isWinner, isCurrentUser }) {
   const badgeTone = isWinner
-    ? 'border-emerald-400/25 text-emerald-200'
-    : 'border-white/10 text-slate-200'
+    ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5'
+    : 'border-slate-800 text-slate-400 bg-slate-900/30'
 
-  const cardGlow = isWinner
-    ? 'ring-1 ring-emerald-400/30 shadow-[var(--shadow-glow)]'
-    : 'ring-1 ring-white/5'
+  const cardBorder = isWinner
+    ? 'border-emerald-500/25 bg-slate-900/10 shadow-sm'
+    : 'border-slate-850 bg-slate-950/20'
 
   return (
-    <article className={['cyber-card relative overflow-hidden p-6 sm:p-7', cardGlow].join(' ')}>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 [background:radial-gradient(520px_240px_at_50%_0%,var(--color-secondary-soft),transparent_65%)] hover:opacity-100"
-      />
-
+    <article className={['glass-card relative overflow-hidden p-6 sm:p-7 transition-all duration-300', cardBorder].join(' ')}>
       <header className="relative flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div
             className={
               [
-                'grid h-11 w-11 place-items-center rounded-full border',
-                'border-white/10 bg-slate-950/45 font-mono text-lg text-slate-100',
-                isWinner ? 'shadow-[var(--shadow-glow)]' : 'opacity-90',
+                'grid h-10 w-10 place-items-center rounded-full border border-slate-850 bg-slate-900 font-semibold text-sm text-slate-350',
+                isWinner ? 'border-emerald-500/30 text-emerald-300 bg-emerald-500/5' : 'border-slate-800',
               ].join(' ')
             }
             aria-hidden="true"
@@ -61,17 +55,17 @@ function PlayerResultCard({ player, isWinner, isCurrentUser }) {
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="text-lg font-semibold text-slate-100">
+              <div className="text-base font-semibold text-slate-200">
                 {player.username}
               </div>
               {isCurrentUser ? (
-                <span className="rounded-full border border-cyan-400/30 bg-slate-950/50 px-2.5 py-1 font-mono text-[10px] tracking-widest text-cyan-300">
-                  YOU
+                <span className="rounded-full border border-indigo-500/20 bg-indigo-500/5 px-2 py-0.5 text-[9px] font-semibold text-indigo-400 tracking-wider">
+                  You
                 </span>
               ) : null}
             </div>
-            <div className="mt-1 font-mono text-xs tracking-widest text-slate-400">
-              {isWinner ? 'WINNER' : 'RUNNER-UP'}
+            <div className="mt-0.5 text-[10px] font-semibold text-slate-500 tracking-wider uppercase">
+              {isWinner ? 'Victorious' : 'Defeated'}
             </div>
           </div>
         </div>
@@ -79,19 +73,18 @@ function PlayerResultCard({ player, isWinner, isCurrentUser }) {
         <span
           className={
             [
-              'inline-flex items-center rounded-full border px-3 py-1.5',
-              'bg-slate-950/50 font-mono text-xs tracking-widest',
+              'inline-flex items-center rounded-full border px-3 py-0.5 text-[10px] font-semibold',
               badgeTone,
             ].join(' ')
           }
         >
-          {isWinner ? 'VICTORY' : 'DEFEAT'}
+          {isWinner ? 'Winner' : 'Runner-up'}
         </span>
       </header>
 
-      <div className="relative mt-6 grid gap-3">
-        <StatRow label="WPM" value={player.wpm ?? '—'} tone={isWinner ? 'good' : 'neutral'} />
-        <StatRow label="ACCURACY" value={formatPercent(player.accuracy)} tone={player.accuracy >= 95 ? 'good' : 'neutral'} />
+      <div className="relative mt-5 grid gap-2">
+        <StatRow label="Speed" value={`${player.wpm ?? '—'} WPM`} tone={isWinner ? 'good' : 'neutral'} />
+        <StatRow label="Accuracy" value={formatPercent(player.accuracy)} tone={player.accuracy >= 95 ? 'good' : 'neutral'} />
       </div>
     </article>
   )
@@ -129,8 +122,6 @@ function Result() {
       const data = snap.val()
       
       // DETECT ROOM RESET (Rematch Triggered)
-      // If we previously loaded a winner, but now data.winner is gone, 
-      // it means the room was successfully wiped for a rematch!
       if (hasLoadedWinnerRef.current && !data.winner) {
         navigate(`/lobby?roomId=${roomId}`)
         return
@@ -171,7 +162,6 @@ function Result() {
          })
          
          await update(ref(db), updates)
-         // The onValue hook will fire again, see !data.winner, and navigate everyone!
       }
 
       if (data.winner) {
@@ -188,24 +178,24 @@ function Result() {
          if (myStats && myStats.wpm > 0) {
              const userDocRef = doc(firestore, 'users', user.uid)
              try {
-                await runTransaction(firestore, async (transaction) => {
-                   const userDoc = await transaction.get(userDocRef)
-                   if (!userDoc.exists()) return
-                   
-                   const userData = userDoc.data()
-                   const oldAvgWpm = userData.average_wpm || 0
-                   const oldGames = userData.quick_match_count || 0
-                   
-                   const newGames = oldGames + 1
-                   const newAvgWpm = ((oldAvgWpm * oldGames) + myStats.wpm) / newGames
-                   
-                   transaction.update(userDocRef, {
-                       quick_match_count: newGames,
-                       average_wpm: newAvgWpm
-                   })
-                })
+                 await runTransaction(firestore, async (transaction) => {
+                    const userDoc = await transaction.get(userDocRef)
+                    if (!userDoc.exists()) return
+                    
+                    const userData = userDoc.data()
+                    const oldAvgWpm = userData.average_wpm || 0
+                    const oldGames = userData.quick_match_count || 0
+                    
+                    const newGames = oldGames + 1
+                    const newAvgWpm = ((oldAvgWpm * oldGames) + myStats.wpm) / newGames
+                    
+                    transaction.update(userDocRef, {
+                        quick_match_count: newGames,
+                        average_wpm: newAvgWpm
+                    })
+                 })
              } catch (err) {
-                console.error("Leaderboard transaction failed:", err)
+                 console.error("Leaderboard transaction failed:", err)
              }
          }
       }
@@ -229,9 +219,9 @@ function Result() {
   if (loading || !roomData) {
     return (
       <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
-        <div className="cyber-panel p-8 text-center">
-          <div className="mx-auto grid h-12 w-12 animate-spin place-items-center rounded-full border border-cyan-400/30 border-t-cyan-300 bg-slate-950/50"></div>
-          <h2 className="mt-4 text-xl font-bold text-white">Decrypting results...</h2>
+        <div className="dialog-panel p-8 text-center border-slate-850">
+          <div className="mx-auto grid h-10 w-10 animate-spin place-items-center rounded-full border-2 border-indigo-500 border-t-transparent bg-slate-950/50"></div>
+          <h2 className="mt-4 text-sm font-semibold text-slate-400">Loading results...</h2>
         </div>
       </div>
     )
@@ -265,8 +255,8 @@ function Result() {
   const title = didCurrentUserWin ? 'Victory Secured' : 'Defeat Logged'
   const headline = didCurrentUserWin ? 'You Win!' : 'You Lose!'
   const headlineTone = didCurrentUserWin
-    ? 'text-emerald-300'
-    : 'text-rose-300'
+    ? 'text-emerald-400'
+    : 'text-rose-450'
 
   const handleRematch = async () => {
     if (rematchRequested) return
@@ -276,60 +266,48 @@ function Result() {
   }
 
   return (
-    <section className="relative isolate overflow-hidden">
-      {/* Background overlays (grid + scanlines) */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 text-cyan-400/20">
-        <div className="cyber-grid absolute inset-0" />
-        <div className="cyber-scanlines absolute inset-0" />
-        <div className="cyber-vignette absolute inset-0" />
+    <section className="relative isolate">
+      {/* Background overlays (grid + vignette) */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="bg-grid absolute inset-0" />
+        <div className="bg-vignette absolute inset-0" />
       </div>
 
-      <div className="mx-auto min-h-[calc(100vh-4rem)] max-w-6xl px-4 py-10 sm:py-12">
-        <div className="cyber-entrance">
-          <header className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur sm:p-7">
+      <div className="mx-auto min-h-[calc(100vh-4rem)] max-w-5xl px-4 py-8 sm:py-12">
+        <div className="animate-entrance">
+          <header className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-3 py-1.5">
-                  <span className="font-mono text-xs tracking-widest text-slate-200">
-                    MATCH RESULTS
-                  </span>
-                  <span className="h-1 w-1 rounded-full bg-cyan-300/90" />
-                  <span className="font-mono text-xs text-slate-300">
-                    ROOM: <span className="text-slate-100">{roomId}</span>
-                  </span>
-                  <span className="font-mono text-xs text-slate-300">
-                    LANG: <span className="text-cyan-300">{languageLabel}</span>
-                  </span>
-                  <span className="font-mono text-xs text-slate-300">
-                    TYPE: <span className="text-slate-100">{roomData.matchType}</span>
-                  </span>
+                <div className="inline-flex flex-wrap items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/60 px-3.5 py-1 text-xs text-slate-400">
+                  <span className="text-indigo-400 font-semibold">Match Results</span>
+                  <span className="h-1 w-1 rounded-full bg-slate-700" />
+                  <span>Room: {roomId}</span>
+                  <span className="h-1 w-1 rounded-full bg-slate-700" />
+                  <span>Language: <span className="font-semibold text-slate-200">{languageLabel}</span></span>
                 </div>
 
-                <h1 className="mt-4 text-balance text-3xl font-bold tracking-tight text-slate-100 sm:text-4xl">
+                <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl">
                   {title}
-                  <span className="cyber-cursor ml-2 align-middle" aria-hidden="true">
-                    _
-                  </span>
                 </h1>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="mt-1 text-xs text-slate-400">
                   {roomData.reason === 'opponent_disconnected' 
-                    ? 'Opponent fled the arena. Default victory.'
-                    : 'Match results have been successfully encrypted and logged.'}
+                    ? 'Your opponent left the match.'
+                    : 'Match completed. Results successfully saved.'}
                 </p>
               </div>
 
-              <div className="flex flex-col items-start gap-3 sm:items-end">
-                <div className={['text-2xl font-bold', headlineTone].join(' ')}>
+              <div className="flex flex-col items-start gap-2 sm:items-end">
+                <div className={['text-2xl font-bold tracking-tight', headlineTone].join(' ')}>
                   {headline}
                 </div>
-                <div className="rounded-xl border border-white/10 bg-slate-950/50 px-4 py-3 text-left">
-                  <div className="font-mono text-[10px] tracking-[0.22em] text-slate-400">
-                    WINNER
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 min-w-[160px] text-left">
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                    Match Winner
                   </div>
-                  <div className="mt-1 text-base font-semibold text-slate-100">
+                  <div className="mt-0.5 text-sm font-semibold text-slate-200">
                     {winner.username}
                   </div>
-                  <div className="mt-1 font-mono text-sm text-cyan-300">
+                  <div className="mt-0.5 text-xs text-indigo-400 font-bold font-mono">
                     {winner.wpm} WPM
                   </div>
                 </div>
@@ -337,7 +315,7 @@ function Result() {
             </div>
           </header>
 
-          <div className="mx-auto mt-8 grid w-full max-w-6xl gap-6">
+          <div className="mx-auto mt-8 grid w-full max-w-5xl gap-6">
             <div className="grid gap-6 md:grid-cols-2">
               <PlayerResultCard
                 player={currentPlayer}
@@ -351,14 +329,14 @@ function Result() {
               />
             </div>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 backdrop-blur sm:p-7">
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/30 p-6 backdrop-blur">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="font-mono text-base font-semibold tracking-wide text-slate-100">
-                    MATCH SUMMARY
+                  <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                    Summary Log
                   </h2>
-                  <p className="mt-1.5 text-sm text-slate-300">
-                    Winner is determined by who finishes first.
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    Match completed. Stats compiled and saved.
                   </p>
                 </div>
 
@@ -366,9 +344,9 @@ function Result() {
                   <button
                     type="button"
                     onClick={() => navigate('/')}
-                    className="cyber-button cyber-button-primary w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/70 sm:w-auto"
+                    className="btn btn-primary text-xs font-semibold py-2.5 px-4 w-full sm:w-auto cursor-pointer"
                   >
-                    Back to Home
+                    Back to Dashboard
                   </button>
 
                   {showRematch ? (
@@ -377,30 +355,26 @@ function Result() {
                       onClick={handleRematch}
                       disabled={rematchRequested}
                       className={[
-                        "cyber-button w-full font-mono text-sm focus-visible:outline-none focus-visible:ring-2 sm:w-auto transition-all",
+                        "btn text-xs font-semibold py-2.5 px-4 w-full sm:w-auto transition-all duration-200 cursor-pointer",
                         rematchRequested 
-                           ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10 cursor-not-allowed"
+                           ? "border-emerald-500/20 text-emerald-400 bg-emerald-500/5 cursor-not-allowed"
                            : opponentRematchRequested
-                             ? "border-amber-400/50 text-amber-300 bg-amber-400/10 shadow-[0_0_15px_rgba(251,191,36,0.3)] motion-safe:animate-pulse focus-visible:ring-amber-400/70"
-                             : "cyber-button-secondary focus-visible:ring-cyan-400/70"
+                             ? "border-amber-500/20 text-amber-400 bg-amber-500/5 animate-pulse"
+                             : "btn-secondary"
                       ].join(" ")}
                     >
                       {rematchRequested 
-                        ? (opponentRematchRequested ? "Resetting Room..." : "Waiting for opponent...") 
+                        ? (opponentRematchRequested ? "Resetting Room..." : "Waiting for Opponent...") 
                         : (opponentRematchRequested ? "Accept Rematch" : "Request Rematch")}
                     </button>
                   ) : null}
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <StatRow label="FINAL RESULT" value={didCurrentUserWin ? 'WIN' : 'LOSS'} tone={didCurrentUserWin ? 'good' : 'bad'} />
-                <StatRow label="WINNER WPM" value={`${winner.wpm} WPM`} tone="info" />
-                <StatRow label="ACCURACIES" value={`${formatPercent(currentPlayer.accuracy)} / ${formatPercent(opponentPlayer.accuracy)}`} />
-              </div>
-
-              <div className="mt-4 text-xs text-slate-400">
-                Rematch is available only for private room matches.
+              <div className="mt-5 grid gap-3 text-xs text-slate-400 sm:grid-cols-3">
+                <StatRow label="Result Status" value={didCurrentUserWin ? 'Victory' : 'Defeated'} tone={didCurrentUserWin ? 'good' : 'bad'} />
+                <StatRow label="Top Speed" value={`${winner.wpm} WPM`} tone="info" />
+                <StatRow label="Accuracies (You / Opp)" value={`${formatPercent(currentPlayer.accuracy)} / ${formatPercent(opponentPlayer.accuracy)}`} />
               </div>
             </section>
           </div>
